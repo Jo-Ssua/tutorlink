@@ -1,0 +1,60 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: tutorlink-postgres
+    environment:
+      POSTGRES_USER: tutorlink
+      POSTGRES_PASSWORD: tutorlink
+      POSTGRES_DB: tutorlink
+    ports:
+      - "5432:5432"
+    volumes:
+      - tutorlink-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tutorlink -d tutorlink"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: tutorlink-api
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: development
+      PORT: 3000
+      API_PREFIX: api/v1
+      DATABASE_URL: postgresql://tutorlink:tutorlink@postgres:5432/tutorlink?schema=public
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-dev-access-secret-change-me-32-characters}
+      JWT_ACCESS_EXPIRES_IN: 15m
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-dev-refresh-secret-change-me-32-characters}
+      JWT_REFRESH_EXPIRES_IN: 7d
+      EMAIL_CODE_SECRET: ${EMAIL_CODE_SECRET:-dev-email-code-secret-change-me-32-characters}
+      ANONYMITY_SALT: ${ANONYMITY_SALT:-tutorlink-dev-anonymity-salt}
+      INSTITUTIONAL_EMAIL_DOMAINS: universidad.edu.co,estudiantes.universidad.edu.co
+      CORS_ORIGINS: http://localhost:3001,http://localhost:5173
+      PLATFORM_FEE_PERCENT: 10
+      CANCELLATION_WINDOW_HOURS: 24
+      STUDYMATCH_TTL_CRITICAL_MINUTES: 5
+      STUDYMATCH_TTL_HIGH_MINUTES: 10
+      STUDYMATCH_TTL_MEDIUM_MINUTES: 20
+      STUDYMATCH_TTL_LOW_MINUTES: 30
+      STUDYMATCH_STUDENT_CONFIRM_MINUTES: 10
+      EXPOSE_DEV_CODES: "true"
+      RUN_MIGRATIONS: "true"
+      SEED_ON_START: ${DOCKER_SEED_ON_START:-true}
+    ports:
+      - "3000:3000"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000/api/v1/health >/dev/null 2>&1 || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+volumes:
+  tutorlink-pgdata:

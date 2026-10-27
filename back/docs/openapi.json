@@ -1,0 +1,2672 @@
+{
+  "openapi": "3.0.0",
+  "paths": {
+    "/api/v1/notifications": {
+      "get": {
+        "operationId": "NotificationsController_list",
+        "parameters": [
+          {
+            "name": "unreadOnly",
+            "required": false,
+            "in": "query",
+            "description": "Solo notificaciones no leidas",
+            "schema": {
+              "example": false,
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Listar notificaciones del usuario autenticado",
+        "tags": [
+          "Notifications"
+        ]
+      }
+    },
+    "/api/v1/notifications/unread-count": {
+      "get": {
+        "operationId": "NotificationsController_unreadCount",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Obtener el numero de notificaciones pendientes",
+        "tags": [
+          "Notifications"
+        ]
+      }
+    },
+    "/api/v1/notifications/read-all": {
+      "patch": {
+        "operationId": "NotificationsController_markAllRead",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Marcar todas las notificaciones como leidas",
+        "tags": [
+          "Notifications"
+        ]
+      }
+    },
+    "/api/v1/notifications/{id}/read": {
+      "patch": {
+        "operationId": "NotificationsController_markRead",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Marcar una notificacion como leida",
+        "tags": [
+          "Notifications"
+        ]
+      }
+    },
+    "/api/v1/auth/register": {
+      "post": {
+        "operationId": "AuthController_register",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "summary": "Registrar una cuenta con correo institucional",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/v1/auth/verify-email": {
+      "post": {
+        "operationId": "AuthController_verifyEmail",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerifyEmailDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Verificar el correo institucional con el codigo de 6 digitos",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/v1/auth/resend-verification": {
+      "post": {
+        "operationId": "AuthController_resendVerification",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResendVerificationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Reenviar el codigo de verificacion",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/v1/auth/login": {
+      "post": {
+        "operationId": "AuthController_login",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Iniciar sesion y obtener access/refresh tokens",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/v1/auth/refresh": {
+      "post": {
+        "operationId": "AuthController_refresh",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefreshTokenDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Rotar el refresh token y obtener nuevos tokens",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/v1/auth/logout": {
+      "post": {
+        "operationId": "AuthController_logout",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Cerrar sesion e invalidar el refresh token",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/v1/auth/me": {
+      "get": {
+        "operationId": "AuthController_me",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Obtener el perfil de la cuenta autenticada",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/v1/catalog/faculties": {
+      "get": {
+        "operationId": "CatalogController_faculties",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Listar facultades",
+        "tags": [
+          "Catalog"
+        ]
+      }
+    },
+    "/api/v1/catalog/programs": {
+      "get": {
+        "operationId": "CatalogController_programs",
+        "parameters": [
+          {
+            "name": "facultyId",
+            "required": false,
+            "in": "query",
+            "description": "Filtrar por facultad",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "programId",
+            "required": false,
+            "in": "query",
+            "description": "Filtrar por programa academico",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "subjectId",
+            "required": false,
+            "in": "query",
+            "description": "Filtrar por materia",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": "estructuras",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Listar programas academicos",
+        "tags": [
+          "Catalog"
+        ]
+      }
+    },
+    "/api/v1/catalog/subjects": {
+      "get": {
+        "operationId": "CatalogController_subjects",
+        "parameters": [
+          {
+            "name": "facultyId",
+            "required": false,
+            "in": "query",
+            "description": "Filtrar por facultad",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "programId",
+            "required": false,
+            "in": "query",
+            "description": "Filtrar por programa academico",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "subjectId",
+            "required": false,
+            "in": "query",
+            "description": "Filtrar por materia",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": "estructuras",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Listar materias del pensum oficial",
+        "tags": [
+          "Catalog"
+        ]
+      }
+    },
+    "/api/v1/catalog/professors": {
+      "get": {
+        "operationId": "CatalogController_professors",
+        "parameters": [
+          {
+            "name": "facultyId",
+            "required": false,
+            "in": "query",
+            "description": "Filtrar por facultad",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "programId",
+            "required": false,
+            "in": "query",
+            "description": "Filtrar por programa academico",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "subjectId",
+            "required": false,
+            "in": "query",
+            "description": "Filtrar por materia",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": "estructuras",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Listar profesores y sus materias",
+        "tags": [
+          "Catalog"
+        ]
+      }
+    },
+    "/api/v1/catalog/programs/{programId}/pensum": {
+      "get": {
+        "operationId": "CatalogController_pensum",
+        "parameters": [
+          {
+            "name": "programId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Obtener el pensum oficial de un programa",
+        "tags": [
+          "Catalog"
+        ]
+      }
+    },
+    "/api/v1/tutor/apply": {
+      "post": {
+        "operationId": "TutorController_apply",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApplyTutorDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Enviar o actualizar la postulacion para ser tutor",
+        "tags": [
+          "Tutor"
+        ]
+      }
+    },
+    "/api/v1/tutor/profile": {
+      "get": {
+        "operationId": "TutorController_profile",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Consultar el perfil propio del tutor",
+        "tags": [
+          "Tutor"
+        ]
+      },
+      "patch": {
+        "operationId": "TutorController_updateProfile",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateTutorProfileDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Editar biografia, tarifa, modalidades y disponibilidad del perfil",
+        "tags": [
+          "Tutor"
+        ]
+      }
+    },
+    "/api/v1/tutor/subjects": {
+      "post": {
+        "operationId": "TutorController_addSubject",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddTutorSubjectDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Agregar una materia del pensum pendiente de validacion",
+        "tags": [
+          "Tutor"
+        ]
+      }
+    },
+    "/api/v1/tutor/subjects/{id}": {
+      "delete": {
+        "operationId": "TutorController_removeSubject",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Retirar una materia del perfil de tutor",
+        "tags": [
+          "Tutor"
+        ]
+      }
+    },
+    "/api/v1/tutor/availability": {
+      "get": {
+        "operationId": "TutorController_availability",
+        "parameters": [
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": "2026-10-27T00:00:00.000Z",
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": "2026-11-03T23:59:59.000Z",
+              "type": "string"
+            }
+          },
+          {
+            "name": "modality",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "IN_PERSON",
+                "VIRTUAL",
+                "HYBRID"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Listar las franjas de disponibilidad propias",
+        "tags": [
+          "Tutor"
+        ]
+      },
+      "post": {
+        "operationId": "TutorController_createAvailability",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateAvailabilityDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Crear una franja de disponibilidad",
+        "tags": [
+          "Tutor"
+        ]
+      }
+    },
+    "/api/v1/tutor/availability/{id}": {
+      "patch": {
+        "operationId": "TutorController_updateAvailability",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateAvailabilityDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Editar una franja de disponibilidad sin historial asociado",
+        "tags": [
+          "Tutor"
+        ]
+      },
+      "delete": {
+        "operationId": "TutorController_deleteAvailability",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Eliminar o bloquear una franja de disponibilidad",
+        "tags": [
+          "Tutor"
+        ]
+      }
+    },
+    "/api/v1/tutor/dashboard": {
+      "get": {
+        "operationId": "TutorController_dashboard",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Obtener el panel operativo del tutor",
+        "tags": [
+          "Tutor"
+        ]
+      }
+    },
+    "/api/v1/tutor/requests": {
+      "get": {
+        "operationId": "TutorController_requests",
+        "parameters": [
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "PENDING",
+                "ACCEPTED",
+                "REJECTED",
+                "CONFIRMED",
+                "COMPLETED",
+                "CANCELLED"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Listar solicitudes y reservas recibidas",
+        "tags": [
+          "Tutor"
+        ]
+      }
+    },
+    "/api/v1/tutor/history": {
+      "get": {
+        "operationId": "TutorController_history",
+        "parameters": [
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": "2026-01-01T00:00:00.000Z",
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": "2026-12-31T23:59:59.000Z",
+              "type": "string"
+            }
+          },
+          {
+            "name": "subjectId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "PENDING",
+                "ACCEPTED",
+                "REJECTED",
+                "CONFIRMED",
+                "COMPLETED",
+                "CANCELLED"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Consultar historial de tutorias con estudiantes anonimizados",
+        "tags": [
+          "Tutor"
+        ]
+      }
+    },
+    "/api/v1/tutor/earnings": {
+      "get": {
+        "operationId": "TutorController_earnings",
+        "parameters": [
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": "2026-10-01T00:00:00.000Z",
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": "2026-10-31T23:59:59.000Z",
+              "type": "string"
+            }
+          },
+          {
+            "name": "groupBy",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": "MONTH",
+              "type": "string",
+              "enum": [
+                "DAY",
+                "WEEK",
+                "MONTH"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Resumen de ingresos simulados por periodo y sesion",
+        "tags": [
+          "Tutor"
+        ]
+      }
+    },
+    "/api/v1/tutors": {
+      "get": {
+        "operationId": "TutorsController_search",
+        "parameters": [
+          {
+            "name": "facultyId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "programId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "subjectId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "professorId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "minRating",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": 4.5,
+              "type": "number"
+            }
+          },
+          {
+            "name": "maxRate",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": 80000,
+              "type": "number"
+            }
+          },
+          {
+            "name": "modality",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "IN_PERSON",
+                "VIRTUAL",
+                "HYBRID"
+              ]
+            }
+          },
+          {
+            "name": "q",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": "algoritmos",
+              "type": "string"
+            }
+          },
+          {
+            "name": "sortBy",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": "RELEVANCE",
+              "type": "string",
+              "enum": [
+                "RELEVANCE",
+                "RATING",
+                "PRICE",
+                "AVAILABILITY"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Buscar tutores por facultad, programa, materia, profesor, tarifa y calificacion",
+        "tags": [
+          "Tutors"
+        ]
+      }
+    },
+    "/api/v1/tutors/{id}": {
+      "get": {
+        "operationId": "TutorsController_profile",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Consultar el perfil publico de un tutor verificado",
+        "tags": [
+          "Tutors"
+        ]
+      }
+    },
+    "/api/v1/tutors/{id}/availability": {
+      "get": {
+        "operationId": "TutorsController_availability",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": "2026-10-27T00:00:00.000Z",
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": "2026-11-03T23:59:59.000Z",
+              "type": "string"
+            }
+          },
+          {
+            "name": "modality",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "IN_PERSON",
+                "VIRTUAL",
+                "HYBRID"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Consultar franjas disponibles de un tutor",
+        "tags": [
+          "Tutors"
+        ]
+      }
+    },
+    "/api/v1/tutors/{id}/reviews": {
+      "get": {
+        "operationId": "TutorsController_reviews",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Consultar resenas verificadas y anonimizadas de un tutor",
+        "tags": [
+          "Tutors"
+        ]
+      }
+    },
+    "/api/v1/bookings/quote": {
+      "post": {
+        "operationId": "BookingsController_quote",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QuoteBookingDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Cotizar una reserva con tarifa, cargos simulados y total",
+        "tags": [
+          "Bookings"
+        ]
+      }
+    },
+    "/api/v1/bookings": {
+      "post": {
+        "operationId": "BookingsController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateBookingDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Crear una reserva pendiente sobre una franja disponible",
+        "tags": [
+          "Bookings"
+        ]
+      }
+    },
+    "/api/v1/bookings/my": {
+      "get": {
+        "operationId": "BookingsController_myBookings",
+        "parameters": [
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "PENDING",
+                "ACCEPTED",
+                "REJECTED",
+                "CONFIRMED",
+                "COMPLETED",
+                "CANCELLED"
+              ]
+            }
+          },
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": "2026-10-01T00:00:00.000Z",
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": "2026-12-31T23:59:59.000Z",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Listar las reservas del estudiante autenticado",
+        "tags": [
+          "Bookings"
+        ]
+      }
+    },
+    "/api/v1/bookings/tutor": {
+      "get": {
+        "operationId": "BookingsController_tutorBookings",
+        "parameters": [
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "PENDING",
+                "ACCEPTED",
+                "REJECTED",
+                "CONFIRMED",
+                "COMPLETED",
+                "CANCELLED"
+              ]
+            }
+          },
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": "2026-10-01T00:00:00.000Z",
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": "2026-12-31T23:59:59.000Z",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Listar las reservas recibidas por el tutor",
+        "tags": [
+          "Bookings"
+        ]
+      }
+    },
+    "/api/v1/bookings/{id}": {
+      "get": {
+        "operationId": "BookingsController_detail",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Consultar el detalle de una reserva",
+        "tags": [
+          "Bookings"
+        ]
+      }
+    },
+    "/api/v1/bookings/{id}/accept": {
+      "post": {
+        "operationId": "BookingsController_accept",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Aceptar una solicitud de reserva",
+        "tags": [
+          "Bookings"
+        ]
+      }
+    },
+    "/api/v1/bookings/{id}/reject": {
+      "post": {
+        "operationId": "BookingsController_reject",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RejectBookingDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Rechazar una solicitud de reserva y liberar la franja",
+        "tags": [
+          "Bookings"
+        ]
+      }
+    },
+    "/api/v1/bookings/{id}/payment": {
+      "post": {
+        "operationId": "BookingsController_confirmPayment",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SimulatedPaymentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Confirmar el pago simulado de una reserva aceptada",
+        "tags": [
+          "Bookings"
+        ]
+      }
+    },
+    "/api/v1/bookings/{id}/cancel": {
+      "post": {
+        "operationId": "BookingsController_cancel",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CancelBookingDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Cancelar una reserva segun la politica de cancelacion",
+        "tags": [
+          "Bookings"
+        ]
+      }
+    },
+    "/api/v1/bookings/{id}/complete": {
+      "post": {
+        "operationId": "BookingsController_complete",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Marcar una sesion confirmada como completada",
+        "tags": [
+          "Bookings"
+        ]
+      }
+    },
+    "/api/v1/bookings/{id}/review": {
+      "post": {
+        "operationId": "ReviewsController_create",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateReviewDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Calificar de 1 a 5 una reserva completada sin duplicados",
+        "tags": [
+          "Reviews"
+        ]
+      }
+    },
+    "/api/v1/studymatch/requests": {
+      "post": {
+        "operationId": "StudyMatchController_createRequest",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateStudyMatchRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Crear una solicitud urgente e iniciar la asignacion automatica",
+        "tags": [
+          "StudyMatch"
+        ]
+      }
+    },
+    "/api/v1/studymatch/requests/my": {
+      "get": {
+        "operationId": "StudyMatchController_myRequests",
+        "parameters": [
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "SEARCHING",
+                "PROPOSAL_SENT",
+                "AWAITING_STUDENT",
+                "CONFIRMED",
+                "NO_TUTORS",
+                "CANCELLED",
+                "EXPIRED"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Listar las solicitudes StudyMatch del estudiante",
+        "tags": [
+          "StudyMatch"
+        ]
+      }
+    },
+    "/api/v1/studymatch/requests/{id}": {
+      "get": {
+        "operationId": "StudyMatchController_request",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Consultar una solicitud StudyMatch y sus propuestas",
+        "tags": [
+          "StudyMatch"
+        ]
+      }
+    },
+    "/api/v1/studymatch/requests/{id}/cancel": {
+      "post": {
+        "operationId": "StudyMatchController_cancel",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Cancelar una solicitud StudyMatch activa",
+        "tags": [
+          "StudyMatch"
+        ]
+      }
+    },
+    "/api/v1/studymatch/requests/{id}/retry": {
+      "post": {
+        "operationId": "StudyMatchController_retry",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Reintentar la asignacion cuando no habia tutores disponibles",
+        "tags": [
+          "StudyMatch"
+        ]
+      }
+    },
+    "/api/v1/studymatch/requests/{id}/advance": {
+      "post": {
+        "operationId": "StudyMatchController_advance",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Expirar manualmente la propuesta activa y avanzar al siguiente candidato",
+        "tags": [
+          "StudyMatch"
+        ]
+      }
+    },
+    "/api/v1/studymatch/proposals/pending": {
+      "get": {
+        "operationId": "StudyMatchController_pendingProposals",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Listar propuestas urgentes pendientes de respuesta del tutor",
+        "tags": [
+          "StudyMatch"
+        ]
+      }
+    },
+    "/api/v1/studymatch/proposals/{id}/respond": {
+      "post": {
+        "operationId": "StudyMatchController_respond",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RespondProposalDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Aceptar o rechazar una propuesta urgente",
+        "tags": [
+          "StudyMatch"
+        ]
+      }
+    },
+    "/api/v1/studymatch/proposals/{id}/confirm": {
+      "post": {
+        "operationId": "StudyMatchController_confirm",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfirmProposalDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Aceptar o rechazar la propuesta del tutor y confirmar pago simulado",
+        "tags": [
+          "StudyMatch"
+        ]
+      }
+    },
+    "/api/v1/admin/tutor-applications": {
+      "get": {
+        "operationId": "AdminController_tutorApplications",
+        "parameters": [
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": "PENDING",
+              "type": "string",
+              "enum": [
+                "PENDING",
+                "VERIFIED",
+                "REJECTED"
+              ]
+            }
+          },
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": "ana",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Listar postulaciones de tutores y su evidencia",
+        "tags": [
+          "Admin"
+        ]
+      }
+    },
+    "/api/v1/admin/tutor-applications/{id}/approve": {
+      "patch": {
+        "operationId": "AdminController_approve",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Aprobar una postulacion y asignar el rol TUTOR",
+        "tags": [
+          "Admin"
+        ]
+      }
+    },
+    "/api/v1/admin/tutor-applications/{id}/reject": {
+      "patch": {
+        "operationId": "AdminController_reject",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RejectTutorApplicationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Rechazar una postulacion con motivo visible",
+        "tags": [
+          "Admin"
+        ]
+      }
+    },
+    "/api/v1/admin/tutor-subjects": {
+      "get": {
+        "operationId": "AdminController_tutorSubjects",
+        "parameters": [
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": "PENDING",
+              "type": "string",
+              "enum": [
+                "PENDING",
+                "VERIFIED",
+                "REJECTED"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Listar materias de tutores pendientes de validacion",
+        "tags": [
+          "Admin"
+        ]
+      }
+    },
+    "/api/v1/admin/tutor-subjects/{id}/verify": {
+      "patch": {
+        "operationId": "AdminController_verifySubject",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Verificar una materia agregada por un tutor",
+        "tags": [
+          "Admin"
+        ]
+      }
+    },
+    "/api/v1/admin/tutor-subjects/{id}/reject": {
+      "patch": {
+        "operationId": "AdminController_rejectSubject",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RejectTutorSubjectDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Rechazar la validacion de una materia de tutor",
+        "tags": [
+          "Admin"
+        ]
+      }
+    },
+    "/api/v1/admin/users": {
+      "get": {
+        "operationId": "AdminController_users",
+        "parameters": [
+          {
+            "name": "role",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "STUDENT",
+                "TUTOR",
+                "ADMIN"
+              ]
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "PENDING_VERIFICATION",
+                "ACTIVE",
+                "SUSPENDED"
+              ]
+            }
+          },
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": "ana",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Listar usuarios por rol, estado o texto",
+        "tags": [
+          "Admin"
+        ]
+      }
+    },
+    "/api/v1/admin/stats": {
+      "get": {
+        "operationId": "AdminController_stats",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Obtener metricas operativas y de ingresos simulados",
+        "tags": [
+          "Admin"
+        ]
+      }
+    },
+    "/api/v1/health": {
+      "get": {
+        "operationId": "HealthController_check",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Verificar el estado del servicio y la base de datos",
+        "tags": [
+          "Health"
+        ]
+      }
+    }
+  },
+  "info": {
+    "title": "TutorLink API",
+    "description": "Backend de tutorias universitarias con StudyMatch y pagos simulados. Todas las respuestas exitosas usan { success, data, meta } y los errores { success, error, meta }. Autenticacion: Authorization: Bearer <accessToken>.",
+    "version": "1.0.0",
+    "contact": {}
+  },
+  "tags": [
+    {
+      "name": "Auth",
+      "description": "Registro, verificacion, login y refresh"
+    },
+    {
+      "name": "Catalog",
+      "description": "Facultades, programas, materias y profesores"
+    },
+    {
+      "name": "Tutors",
+      "description": "Busqueda, perfil publico y resenas de tutores"
+    },
+    {
+      "name": "Tutor",
+      "description": "Gestion del perfil, disponibilidad e ingresos del tutor"
+    },
+    {
+      "name": "Bookings",
+      "description": "Reservas y pagos simulados"
+    },
+    {
+      "name": "Reviews",
+      "description": "Resenas de sesiones completadas"
+    },
+    {
+      "name": "StudyMatch",
+      "description": "Asignacion automatica de tutores para solicitudes urgentes"
+    },
+    {
+      "name": "Notifications",
+      "description": "Notificaciones internas del usuario"
+    },
+    {
+      "name": "Admin",
+      "description": "Aprobacion de tutores, materias y metricas"
+    },
+    {
+      "name": "Health",
+      "description": "Estado del servicio"
+    }
+  ],
+  "servers": [],
+  "components": {
+    "securitySchemes": {
+      "bearer": {
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "type": "http",
+        "description": "Access token emitido por /auth/login"
+      }
+    },
+    "schemas": {
+      "RegisterDto": {
+        "type": "object",
+        "properties": {
+          "fullName": {
+            "type": "string",
+            "example": "Ana Maria Torres"
+          },
+          "email": {
+            "type": "string",
+            "example": "ana.torres@universidad.edu.co"
+          },
+          "password": {
+            "type": "string",
+            "example": "TutorLink123*",
+            "minLength": 8
+          },
+          "studentCode": {
+            "type": "string",
+            "example": "20231001"
+          },
+          "programId": {
+            "type": "string",
+            "example": "8c0f2a50-6f7a-4d3d-a4a5-6b1e8f0d9c11"
+          },
+          "semester": {
+            "type": "number",
+            "example": 5
+          }
+        },
+        "required": [
+          "fullName",
+          "email",
+          "password"
+        ]
+      },
+      "VerifyEmailDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "example": "ana.torres@universidad.edu.co"
+          },
+          "code": {
+            "type": "string",
+            "example": "123456"
+          }
+        },
+        "required": [
+          "email",
+          "code"
+        ]
+      },
+      "ResendVerificationDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "example": "ana.torres@universidad.edu.co"
+          }
+        },
+        "required": [
+          "email"
+        ]
+      },
+      "LoginDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "example": "ana.torres@universidad.edu.co"
+          },
+          "password": {
+            "type": "string",
+            "example": "TutorLink123*"
+          }
+        },
+        "required": [
+          "email",
+          "password"
+        ]
+      },
+      "RefreshTokenDto": {
+        "type": "object",
+        "properties": {
+          "refreshToken": {
+            "type": "string",
+            "description": "Refresh token entregado por /auth/login"
+          }
+        },
+        "required": [
+          "refreshToken"
+        ]
+      },
+      "TutorSubjectApplicationDto": {
+        "type": "object",
+        "properties": {
+          "subjectId": {
+            "type": "string",
+            "example": "4ef1f1f7-1f2f-4d4e-9f1e-2f3a4b5c6d7e"
+          },
+          "evidenceUrl": {
+            "type": "string",
+            "example": "https://storage.tutorlink.edu/evidencias/notas.pdf"
+          }
+        },
+        "required": [
+          "subjectId"
+        ]
+      },
+      "ApplyTutorDto": {
+        "type": "object",
+        "properties": {
+          "bio": {
+            "type": "string",
+            "example": "Estudiante de Ingenieria de Sistemas con enfoque en algoritmos."
+          },
+          "experienceYears": {
+            "type": "number",
+            "example": 2
+          },
+          "hourlyRate": {
+            "type": "number",
+            "example": 45000,
+            "description": "Tarifa por hora en COP"
+          },
+          "modalities": {
+            "type": "array",
+            "example": [
+              "VIRTUAL",
+              "IN_PERSON"
+            ],
+            "items": {
+              "type": "string",
+              "enum": [
+                "IN_PERSON",
+                "VIRTUAL",
+                "HYBRID"
+              ]
+            }
+          },
+          "subjects": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TutorSubjectApplicationDto"
+            }
+          },
+          "professorIds": {
+            "example": [
+              "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d"
+            ],
+            "description": "Profesores con los que el tutor tiene experiencia",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "experienceYears",
+          "hourlyRate",
+          "modalities",
+          "subjects"
+        ]
+      },
+      "UpdateTutorProfileDto": {
+        "type": "object",
+        "properties": {
+          "bio": {
+            "type": "string"
+          },
+          "experienceYears": {
+            "type": "number",
+            "example": 3
+          },
+          "hourlyRate": {
+            "type": "number",
+            "example": 50000
+          },
+          "modalities": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "IN_PERSON",
+                "VIRTUAL",
+                "HYBRID"
+              ]
+            }
+          },
+          "maxWeeklySessions": {
+            "type": "number",
+            "example": 20
+          },
+          "isActive": {
+            "type": "boolean",
+            "example": true,
+            "description": "Pausar o reactivar la oferta de tutorias"
+          }
+        }
+      },
+      "AddTutorSubjectDto": {
+        "type": "object",
+        "properties": {
+          "subjectId": {
+            "type": "string"
+          },
+          "evidenceUrl": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "subjectId"
+        ]
+      },
+      "CreateAvailabilityDto": {
+        "type": "object",
+        "properties": {
+          "startAt": {
+            "type": "string",
+            "example": "2026-10-28T14:00:00.000Z"
+          },
+          "endAt": {
+            "type": "string",
+            "example": "2026-10-28T15:00:00.000Z"
+          },
+          "modality": {
+            "type": "string",
+            "enum": [
+              "IN_PERSON",
+              "VIRTUAL",
+              "HYBRID"
+            ],
+            "example": "VIRTUAL"
+          }
+        },
+        "required": [
+          "startAt",
+          "endAt",
+          "modality"
+        ]
+      },
+      "UpdateAvailabilityDto": {
+        "type": "object",
+        "properties": {
+          "startAt": {
+            "type": "string",
+            "example": "2026-10-28T14:00:00.000Z"
+          },
+          "endAt": {
+            "type": "string",
+            "example": "2026-10-28T15:00:00.000Z"
+          },
+          "modality": {
+            "type": "string",
+            "enum": [
+              "IN_PERSON",
+              "VIRTUAL",
+              "HYBRID"
+            ]
+          }
+        }
+      },
+      "QuoteBookingDto": {
+        "type": "object",
+        "properties": {
+          "tutorProfileId": {
+            "type": "string",
+            "description": "ID del perfil de tutor"
+          },
+          "slotId": {
+            "type": "string",
+            "description": "ID de la franja disponible"
+          }
+        },
+        "required": [
+          "tutorProfileId",
+          "slotId"
+        ]
+      },
+      "CreateBookingDto": {
+        "type": "object",
+        "properties": {
+          "tutorProfileId": {
+            "type": "string",
+            "description": "ID del perfil de tutor"
+          },
+          "slotId": {
+            "type": "string",
+            "description": "ID de la franja disponible"
+          },
+          "subjectId": {
+            "type": "string",
+            "example": "4ef1f1f7-1f2f-4d4e-9f1e-2f3a4b5c6d7e"
+          },
+          "topic": {
+            "type": "string",
+            "example": "Preparacion para el parcial de estructuras de datos"
+          },
+          "description": {
+            "type": "string",
+            "example": "Necesito repasar arboles AVL y grafos."
+          }
+        },
+        "required": [
+          "tutorProfileId",
+          "slotId",
+          "subjectId",
+          "topic"
+        ]
+      },
+      "RejectBookingDto": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "example": "No tengo disponibilidad para ese tema"
+          }
+        }
+      },
+      "SimulatedPaymentDto": {
+        "type": "object",
+        "properties": {
+          "simulatePayment": {
+            "type": "boolean",
+            "example": true,
+            "description": "Confirma el pago simulado. No se procesan datos bancarios reales."
+          }
+        },
+        "required": [
+          "simulatePayment"
+        ]
+      },
+      "CancelBookingDto": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "example": "Cambio de horario academico"
+          }
+        }
+      },
+      "CreateReviewDto": {
+        "type": "object",
+        "properties": {
+          "rating": {
+            "type": "number",
+            "example": 5,
+            "minimum": 1,
+            "maximum": 5
+          },
+          "comment": {
+            "type": "string",
+            "example": "Explico los grafos con mucha claridad."
+          },
+          "isAnonymous": {
+            "type": "boolean",
+            "example": true,
+            "default": true
+          }
+        },
+        "required": [
+          "rating"
+        ]
+      },
+      "CreateStudyMatchRequestDto": {
+        "type": "object",
+        "properties": {
+          "subjectId": {
+            "type": "string",
+            "description": "Materia del pensum oficial"
+          },
+          "professorId": {
+            "type": "string",
+            "description": "Profesor indicado por el estudiante"
+          },
+          "topic": {
+            "type": "string",
+            "example": "Parcial de estructuras de datos manana"
+          },
+          "description": {
+            "type": "string",
+            "example": "Necesito repasar arboles AVL y recorridos."
+          },
+          "urgency": {
+            "type": "string",
+            "enum": [
+              "LOW",
+              "MEDIUM",
+              "HIGH",
+              "CRITICAL"
+            ],
+            "example": "CRITICAL"
+          },
+          "modality": {
+            "type": "string",
+            "enum": [
+              "IN_PERSON",
+              "VIRTUAL",
+              "HYBRID"
+            ],
+            "example": "VIRTUAL"
+          },
+          "availableFrom": {
+            "type": "string",
+            "example": "2026-10-27T15:00:00.000Z"
+          },
+          "availableTo": {
+            "type": "string",
+            "example": "2026-10-27T21:00:00.000Z"
+          }
+        },
+        "required": [
+          "subjectId",
+          "topic",
+          "urgency",
+          "modality",
+          "availableFrom",
+          "availableTo"
+        ]
+      },
+      "RespondProposalDto": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "enum": [
+              "ACCEPT",
+              "REJECT"
+            ],
+            "example": "ACCEPT"
+          },
+          "reason": {
+            "type": "string",
+            "example": "No cubro ese tema con ese nivel de urgencia"
+          }
+        },
+        "required": [
+          "action"
+        ]
+      },
+      "ConfirmProposalDto": {
+        "type": "object",
+        "properties": {
+          "accept": {
+            "type": "boolean",
+            "example": true,
+            "description": "Aceptar o rechazar la propuesta del tutor"
+          },
+          "simulatePayment": {
+            "type": "boolean",
+            "example": true,
+            "description": "Confirmar pago simulado. Obligatorio cuando accept=true."
+          },
+          "rejectionReason": {
+            "type": "string",
+            "example": "El horario ya no me sirve"
+          }
+        },
+        "required": [
+          "accept"
+        ]
+      },
+      "RejectTutorApplicationDto": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "example": "La evidencia academica no corresponde a la materia declarada"
+          }
+        },
+        "required": [
+          "reason"
+        ]
+      },
+      "RejectTutorSubjectDto": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "example": "El soporte no es legible"
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,12 @@
+node_modules
+dist
+dist-seed
+coverage
+.git
+.gitignore
+.env
+.env.*
+!.env.example
+*.log
+README.md
+HUs.csv

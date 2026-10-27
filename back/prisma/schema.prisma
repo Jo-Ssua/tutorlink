@@ -1,0 +1,464 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  STUDENT
+  TUTOR
+  ADMIN
+}
+
+enum UserStatus {
+  PENDING_VERIFICATION
+  ACTIVE
+  SUSPENDED
+}
+
+enum VerificationStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+enum Modality {
+  IN_PERSON
+  VIRTUAL
+  HYBRID
+}
+
+enum SlotStatus {
+  AVAILABLE
+  HELD
+  RESERVED
+  BLOCKED
+}
+
+enum Urgency {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum TutoringRequestStatus {
+  SEARCHING
+  PROPOSAL_SENT
+  AWAITING_STUDENT
+  CONFIRMED
+  NO_TUTORS
+  CANCELLED
+  EXPIRED
+}
+
+enum ProposalStatus {
+  PENDING_TUTOR
+  TUTOR_ACCEPTED
+  TUTOR_REJECTED
+  STUDENT_REJECTED
+  CONFIRMED
+  EXPIRED
+  CANCELLED
+}
+
+enum BookingStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  APPROVED
+  REFUNDED
+  FAILED
+}
+
+enum PaymentType {
+  SIMULATED
+}
+
+enum NotificationType {
+  TUTOR_APPLICATION_SUBMITTED
+  TUTOR_APPLICATION_APPROVED
+  TUTOR_APPLICATION_REJECTED
+  TUTOR_SUBJECT_VERIFIED
+  TUTOR_SUBJECT_REJECTED
+  TUTORING_REQUEST_CREATED
+  BOOKING_CREATED
+  BOOKING_STATUS_CHANGED
+  STUDYMATCH_PROPOSAL
+  STUDYMATCH_PROPOSAL_ACCEPTED
+  STUDYMATCH_PROPOSAL_REJECTED
+  STUDYMATCH_PROPOSAL_EXPIRED
+  STUDYMATCH_NO_TUTORS
+  STUDYMATCH_REQUEST_CONFIRMED
+  REVIEW_RECEIVED
+  PAYMENT_SIMULATED
+  SYSTEM
+}
+
+model User {
+  id                         String    @id @default(uuid()) @db.Uuid
+  email                      String    @unique
+  passwordHash               String
+  fullName                   String
+  role                       Role      @default(STUDENT)
+  status                     UserStatus @default(PENDING_VERIFICATION)
+  emailVerificationCodeHash  String?
+  emailVerificationExpiresAt DateTime?
+  verificationSentAt         DateTime?
+  emailVerifiedAt            DateTime?
+  refreshTokenHash           String?
+  lastLoginAt                DateTime?
+  createdAt                  DateTime  @default(now())
+  updatedAt                  DateTime  @updatedAt
+
+  studentProfile   StudentProfile?
+  tutorProfile     TutorProfile?
+  notifications    Notification[]
+  tutoringRequests TutoringRequest[]
+  proposals        StudyMatchProposal[] @relation("TutorProposals")
+  bookingsAsStudent Booking[]          @relation("StudentBookings")
+  bookingsAsTutor   Booking[]          @relation("TutorBookings")
+  reviewsGiven      Review[]           @relation("ReviewsGiven")
+  reviewsReceived   Review[]           @relation("ReviewsReceived")
+  paymentsAsStudent Payment[]          @relation("StudentPayments")
+  paymentsAsTutor   Payment[]          @relation("TutorPayments")
+
+  @@index([role, status])
+  @@map("users")
+}
+
+model StudentProfile {
+  id          String   @id @default(uuid()) @db.Uuid
+  userId      String   @unique @db.Uuid
+  studentCode String?  @unique
+  semester    Int?
+  programId   String?  @db.Uuid
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  program Program? @relation(fields: [programId], references: [id])
+
+  @@map("student_profiles")
+}
+
+model TutorProfile {
+  id                 String             @id @default(uuid()) @db.Uuid
+  userId             String             @unique @db.Uuid
+  bio                String?
+  experienceYears    Int                @default(0)
+  hourlyRate         Decimal            @db.Decimal(10, 2)
+  verificationStatus VerificationStatus @default(PENDING)
+  rejectionReason    String?
+  verifiedAt         DateTime?
+  averageRating      Float              @default(0)
+  reviewCount        Int                @default(0)
+  modalities         Modality[]         @default([])
+  isActive           Boolean            @default(true)
+  maxWeeklySessions  Int?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  user         User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subjects     TutorSubject[]
+  professors   TutorProfessor[]
+  availability AvailabilitySlot[]
+
+  @@index([verificationStatus, isActive])
+  @@index([averageRating])
+  @@map("tutor_profiles")
+}
+
+model Faculty {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String
+  code      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  programs Program[]
+
+  @@map("faculties")
+}
+
+model Program {
+  id        String   @id @default(uuid()) @db.Uuid
+  facultyId String   @db.Uuid
+  name      String
+  code      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  faculty         Faculty          @relation(fields: [facultyId], references: [id])
+  subjects        Subject[]
+  professors      Professor[]
+  studentProfiles StudentProfile[]
+
+  @@index([facultyId])
+  @@map("programs")
+}
+
+model Subject {
+  id        String   @id @default(uuid()) @db.Uuid
+  programId String   @db.Uuid
+  name      String
+  code      String   @unique
+  credits   Int      @default(3)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  program          Program            @relation(fields: [programId], references: [id])
+  tutorSubjects    TutorSubject[]
+  subjectProfessors SubjectProfessor[]
+  tutoringRequests TutoringRequest[]
+  bookings         Booking[]
+
+  @@index([programId])
+  @@map("subjects")
+}
+
+model Professor {
+  id        String   @id @default(uuid()) @db.Uuid
+  programId String   @db.Uuid
+  fullName  String
+  email     String?  @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  program          Program            @relation(fields: [programId], references: [id])
+  subjectLinks     SubjectProfessor[]
+  tutorLinks       TutorProfessor[]
+  tutoringRequests TutoringRequest[]
+
+  @@index([programId])
+  @@map("professors")
+}
+
+model SubjectProfessor {
+  subjectId   String @db.Uuid
+  professorId String @db.Uuid
+
+  subject   Subject   @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  professor Professor @relation(fields: [professorId], references: [id], onDelete: Cascade)
+
+  @@id([subjectId, professorId])
+  @@map("subject_professors")
+}
+
+model TutorSubject {
+  id              String             @id @default(uuid()) @db.Uuid
+  tutorId         String             @db.Uuid
+  subjectId       String             @db.Uuid
+  evidenceUrl     String?
+  status          VerificationStatus @default(PENDING)
+  rejectionReason String?
+  verifiedAt      DateTime?
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  tutor   TutorProfile @relation(fields: [tutorId], references: [id], onDelete: Cascade)
+  subject Subject      @relation(fields: [subjectId], references: [id])
+
+  @@unique([tutorId, subjectId])
+  @@index([status])
+  @@map("tutor_subjects")
+}
+
+model TutorProfessor {
+  tutorId     String @db.Uuid
+  professorId String @db.Uuid
+
+  tutor     TutorProfile @relation(fields: [tutorId], references: [id], onDelete: Cascade)
+  professor Professor    @relation(fields: [professorId], references: [id], onDelete: Cascade)
+
+  @@id([tutorId, professorId])
+  @@map("tutor_professors")
+}
+
+model AvailabilitySlot {
+  id         String     @id @default(uuid()) @db.Uuid
+  tutorId    String     @db.Uuid
+  startAt    DateTime
+  endAt      DateTime
+  modality   Modality
+  status     SlotStatus @default(AVAILABLE)
+  heldUntil  DateTime?
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+
+  tutor     TutorProfile         @relation(fields: [tutorId], references: [id], onDelete: Cascade)
+  bookings  Booking[]
+  proposals StudyMatchProposal[]
+
+  @@unique([tutorId, startAt, endAt])
+  @@index([tutorId, startAt, endAt])
+  @@index([status, startAt])
+  @@map("availability_slots")
+}
+
+model TutoringRequest {
+  id            String                @id @default(uuid()) @db.Uuid
+  studentId     String                @db.Uuid
+  subjectId     String                @db.Uuid
+  professorId   String?               @db.Uuid
+  topic         String
+  description   String?
+  urgency       Urgency
+  modality      Modality
+  availableFrom DateTime
+  availableTo   DateTime
+  status        TutoringRequestStatus @default(SEARCHING)
+  cancelledAt   DateTime?
+  createdAt     DateTime              @default(now())
+  updatedAt     DateTime              @updatedAt
+
+  student   User                @relation(fields: [studentId], references: [id])
+  subject   Subject             @relation(fields: [subjectId], references: [id])
+  professor Professor?          @relation(fields: [professorId], references: [id])
+  proposals StudyMatchProposal[]
+  booking   Booking?
+
+  @@index([studentId, status])
+  @@index([status, createdAt])
+  @@map("tutoring_requests")
+}
+
+model StudyMatchProposal {
+  id              String         @id @default(uuid()) @db.Uuid
+  requestId       String         @db.Uuid
+  tutorId         String         @db.Uuid
+  slotId          String         @db.Uuid
+  score           Float
+  scoreBreakdown  Json
+  status          ProposalStatus @default(PENDING_TUTOR)
+  rank            Int
+  expiresAt       DateTime
+  respondedAt     DateTime?
+  rejectionReason String?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  request TutoringRequest  @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  tutor   User             @relation("TutorProposals", fields: [tutorId], references: [id])
+  slot    AvailabilitySlot @relation(fields: [slotId], references: [id])
+  booking Booking?
+
+  @@unique([requestId, tutorId])
+  @@index([tutorId, status, expiresAt])
+  @@index([requestId, status])
+  @@map("study_match_proposals")
+}
+
+model Booking {
+  id                String        @id @default(uuid()) @db.Uuid
+  studentId         String        @db.Uuid
+  tutorId           String        @db.Uuid
+  subjectId         String        @db.Uuid
+  slotId            String        @db.Uuid
+  requestId         String?       @unique @db.Uuid
+  proposalId        String?       @unique @db.Uuid
+  topic             String
+  description       String?
+  modality          Modality
+  startAt           DateTime
+  endAt             DateTime
+  status            BookingStatus @default(PENDING)
+  hourlyRate        Decimal       @db.Decimal(10, 2)
+  durationMinutes   Int
+  subtotal          Decimal       @db.Decimal(10, 2)
+  platformFee       Decimal       @db.Decimal(10, 2)
+  total             Decimal       @db.Decimal(10, 2)
+  isEmergency       Boolean       @default(false)
+  cancellationReason String?
+  cancelledAt       DateTime?
+  completedAt       DateTime?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  student  User              @relation("StudentBookings", fields: [studentId], references: [id])
+  tutor    User              @relation("TutorBookings", fields: [tutorId], references: [id])
+  subject  Subject           @relation(fields: [subjectId], references: [id])
+  slot     AvailabilitySlot  @relation(fields: [slotId], references: [id])
+  request  TutoringRequest?  @relation(fields: [requestId], references: [id])
+  proposal StudyMatchProposal? @relation(fields: [proposalId], references: [id])
+  payments Payment[]
+  review   Review?
+
+  @@index([studentId, status])
+  @@index([tutorId, status])
+  @@index([startAt])
+  @@index([slotId])
+  @@map("bookings")
+}
+
+model Review {
+  id          String   @id @default(uuid()) @db.Uuid
+  bookingId   String   @unique @db.Uuid
+  studentId   String   @db.Uuid
+  tutorId     String   @db.Uuid
+  rating      Int
+  comment     String?
+  isAnonymous Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  student User    @relation("ReviewsGiven", fields: [studentId], references: [id])
+  tutor   User    @relation("ReviewsReceived", fields: [tutorId], references: [id])
+
+  @@index([tutorId, createdAt])
+  @@map("reviews")
+}
+
+model Payment {
+  id             String        @id @default(uuid()) @db.Uuid
+  bookingId      String        @db.Uuid
+  studentId      String        @db.Uuid
+  tutorId        String        @db.Uuid
+  amount         Decimal       @db.Decimal(10, 2)
+  platformFee    Decimal       @db.Decimal(10, 2)
+  tutorEarnings  Decimal       @db.Decimal(10, 2)
+  currency       String        @default("COP")
+  type           PaymentType   @default(SIMULATED)
+  status         PaymentStatus @default(PENDING)
+  reference      String        @unique
+  simulated      Boolean       @default(true)
+  paidAt         DateTime?
+  refundedAt     DateTime?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  booking Booking @relation(fields: [bookingId], references: [id])
+  student User    @relation("StudentPayments", fields: [studentId], references: [id])
+  tutor   User    @relation("TutorPayments", fields: [tutorId], references: [id])
+
+  @@index([tutorId, status, paidAt])
+  @@index([bookingId])
+  @@map("payments")
+}
+
+model Notification {
+  id        String           @id @default(uuid()) @db.Uuid
+  userId    String           @db.Uuid
+  type      NotificationType
+  title     String
+  message   String
+  data      Json?
+  readAt    DateTime?
+  createdAt DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt, createdAt])
+  @@map("notifications")
+}
