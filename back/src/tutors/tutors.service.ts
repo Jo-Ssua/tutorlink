@@ -402,10 +402,13 @@ export class TutorsService {
         ...(query.modality ? { modality: query.modality } : {}),
       },
       orderBy: { startAt: 'asc' },
-      take: 100,
+      take: 200,
     });
 
-    return slots.map((slot) => this.mapSlot(slot));
+    return slots.map((slot) => ({
+      ...this.mapSlot(slot),
+      durationMinutes: Math.round((slot.endAt.getTime() - slot.startAt.getTime()) / 60_000),
+    }));
   }
 
   async createAvailability(user: AuthenticatedUser, dto: CreateAvailabilityDto) {

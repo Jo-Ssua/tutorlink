@@ -129,3 +129,12 @@ front/
 4. Enviar la calificación con comentario y verificar el mensaje con el nuevo promedio del tutor.
 5. Confirmar que la sesión pasa a “Ya calificadas” y que ya no permite una segunda reseña.
 6. Ingresar con María: sus sesiones completadas aparecen como ya calificadas y sin acción de envío.
+
+## Reservar tutorías (SCRUM-20 y SCRUM-21)
+
+La pestaña **Reservar tutoría** (visible para estudiantes en la barra superior) vive en `src/reservas/` y usa la misma sesión que el resto de la app. Sus estilos están acotados a la clase `.rsv` para no afectar otras secciones.
+
+- **SCRUM-20 · Consulta de disponibilidad:** calendario mensual con las franjas libres del tutor, filtro por modalidad y actualización automática cada 15 s.
+- **SCRUM-21 · Creación de una reserva:** materia, tema o necesidad, modalidad, fecha y hora; resumen de costo; la reserva queda *pendiente de respuesta* del tutor.
+
+Si el puerto 5173 está bloqueado en Windows: `npm run dev -- --port 3001`. Instrucciones generales en el README de la raíz del repositorio.

@@ -1,4 +1,4 @@
-import { Controller, Get, Param, ParseUUIDPipe, Query } from '@nestjs/common';
+import { Controller, Get, Header, Param, ParseUUIDPipe, Query } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Public } from '../common/decorators/public.decorator';
 import { PaginationDto } from '../common/dto/pagination.dto';
@@ -26,7 +26,12 @@ export class TutorsController {
   }
 
   @Get(':id/availability')
-  @ApiOperation({ summary: 'Consultar franjas disponibles de un tutor' })
+  @Header('Cache-Control', 'no-store')
+  @ApiOperation({
+    summary: 'Consultar franjas disponibles de un tutor',
+    description:
+      'Devuelve unicamente franjas futuras en estado AVAILABLE. Una franja reservada, retenida o bloqueada deja de aparecer; los cambios de agenda del tutor se reflejan de inmediato (sin cache).',
+  })
   availability(
     @Param('id', new ParseUUIDPipe()) tutorProfileId: string,
     @Query() query: AvailabilityQueryDto,

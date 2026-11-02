@@ -167,7 +167,7 @@ Todos son publicos.
 | --- | --- | --- | --- |
 | GET | `/tutors` | Buscar tutores | Ver filtros abajo |
 | GET | `/tutors/:id` | Perfil publico del tutor | - |
-| GET | `/tutors/:id/availability` | Franjas disponibles | `from?`, `to?`, `modality?` |
+| GET | `/tutors/:id/availability` | Franjas disponibles (solo futuras y `AVAILABLE`; respuesta sin cache, incluye `durationMinutes`) | `from?`, `to?`, `modality?` |
 | GET | `/tutors/:id/reviews` | Resenas verificadas | `page?`, `limit?` |
 
 Filtros de `GET /tutors`:

@@ -41,7 +41,7 @@ export function DetailsScreen({
   tutor: TutorProfile;
   slot: AvailabilitySlot;
   onBack: () => void;
-  onChangeSlot: () => void;
+  onChangeSlot: (notice?: string) => void;
   onCreated: (result: CreatedBooking) => void;
 }) {
   const modalityOptions = allowedModalities(slot.modality);
@@ -170,7 +170,7 @@ export function DetailsScreen({
             <dd>{formatDuration(durationMinutes(slot.startAt, slot.endAt))}</dd>
           </div>
         </dl>
-        <button type="button" className="link-btn" onClick={onChangeSlot}>
+        <button type="button" className="link-btn" onClick={() => onChangeSlot()}>
           Cambiar horario
         </button>
       </section>
@@ -189,7 +189,15 @@ export function DetailsScreen({
           <Alert title="No pudimos crear la reserva">
             <p>{submitError.message}</p>
             {submitError.slotTaken && (
-              <button type="button" className="link-btn" onClick={onChangeSlot}>
+              <button
+                type="button"
+                className="link-btn"
+                onClick={() =>
+                  onChangeSlot(
+                    'Ese horario ya no está disponible porque otra persona lo reservó. Elige otro horario.',
+                  )
+                }
+              >
                 Elegir otro horario
               </button>
             )}

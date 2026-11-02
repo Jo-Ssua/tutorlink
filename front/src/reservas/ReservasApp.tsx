@@ -10,7 +10,7 @@ import './reservas.css';
 type Screen =
   | { name: 'tutors' }
   | { name: 'profile'; tutorId: string }
-  | { name: 'slots'; tutor: TutorProfile; slot: AvailabilitySlot | null }
+  | { name: 'slots'; tutor: TutorProfile; slot: AvailabilitySlot | null; notice?: string }
   | { name: 'details'; tutor: TutorProfile; slot: AvailabilitySlot }
   | { name: 'done'; result: CreatedBooking };
 
@@ -40,6 +40,7 @@ export function ReservasApp() {
           <SlotsScreen
             tutor={screen.tutor}
             initialSlot={screen.slot}
+            initialNotice={screen.notice}
             onBack={() => setScreen({ name: 'profile', tutorId: screen.tutor.id })}
             onContinue={(slot) => setScreen({ name: 'details', tutor: screen.tutor, slot })}
           />
@@ -51,7 +52,9 @@ export function ReservasApp() {
             tutor={screen.tutor}
             slot={screen.slot}
             onBack={() => setScreen({ name: 'slots', tutor: screen.tutor, slot: screen.slot })}
-            onChangeSlot={() => setScreen({ name: 'slots', tutor: screen.tutor, slot: null })}
+            onChangeSlot={(notice) =>
+              setScreen({ name: 'slots', tutor: screen.tutor, slot: null, notice })
+            }
             onCreated={(result) => setScreen({ name: 'done', result })}
           />
         )}
