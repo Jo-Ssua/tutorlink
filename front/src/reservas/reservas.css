@@ -673,6 +673,124 @@ button:focus-visible {
   background: var(--success-soft);
   color: var(--success);
 }
+
+/* ---- Disponibilidad (SCRUM-20) ---- */
+.filters {
+  display: flex;
+  gap: 8px;
+}
+
+.filters button {
+  flex: 1;
+  padding: 8px 6px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.filters button.is-active {
+  border-color: var(--primary);
+  background: var(--primary-soft);
+  color: var(--primary-dark);
+}
+
+.calendar {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 12px;
+}
+
+.calendar__nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.calendar__nav button {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  font-size: 18px;
+  line-height: 1;
+  color: var(--primary-dark);
+}
+
+.calendar__nav button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.calendar__grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  text-align: center;
+}
+
+.calendar__weekday {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--muted);
+  padding: 4px 0;
+}
+
+.calendar__day {
+  position: relative;
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: transparent;
+  font-size: 14px;
+  color: #a7b3c5;
+}
+
+.calendar__day.has-slots {
+  color: var(--ink);
+  font-weight: 700;
+  background: var(--primary-soft);
+}
+
+.calendar__day:disabled {
+  cursor: default;
+}
+
+.calendar__day i {
+  position: absolute;
+  bottom: 4px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--primary);
+}
+
+.calendar__day.is-active {
+  background: var(--primary);
+  color: #fff;
+}
+
+.calendar__day.is-active i {
+  background: #fff;
+}
+
+.freshness {
+  font-size: 12px;
+  color: var(--muted);
+  text-align: center;
+}
+
+.freshness .link-btn {
+  display: inline;
+  font-size: 12px;
+}
 }
 
 @keyframes rsv-spin {

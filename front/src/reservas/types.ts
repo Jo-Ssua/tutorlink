@@ -65,6 +65,7 @@ export interface AvailabilitySlot {
   endAt: string;
   modality: Modality;
   status: 'AVAILABLE' | 'HELD' | 'RESERVED' | 'BLOCKED';
+  durationMinutes?: number;
 }
 
 export interface TutorProfile {
