@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ApiError, createBookingReview, getMyCompletedBookings, logoutRemote } from './api';
 import { LoginCard } from './components/LoginCard';
+import { ReservasApp } from './reservas/ReservasApp';
 import { SessionCard } from './components/SessionCard';
 import { toFriendlyError, type FriendlyError } from './errors';
 import { clearSession, loadSession } from './session';
@@ -20,6 +21,7 @@ export default function App() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [listError, setListError] = useState<FriendlyError | null>(null);
   const [toast, setToast] = useState<ToastState | null>(null);
+  const [view, setView] = useState<'ratings' | 'reservas'>('ratings');
 
   const isStudent = user?.role === 'STUDENT';
 
@@ -142,6 +144,24 @@ export default function App() {
             </span>
             TutorLink
           </div>
+          {isStudent && (
+            <nav className="topbar__user" aria-label="Secciones">
+              <button
+                type="button"
+                className={`button button--small ${view === 'ratings' ? 'button--primary' : 'button--ghost'}`}
+                onClick={() => setView('ratings')}
+              >
+                Calificaciones
+              </button>
+              <button
+                type="button"
+                className={`button button--small ${view === 'reservas' ? 'button--primary' : 'button--ghost'}`}
+                onClick={() => setView('reservas')}
+              >
+                Reservar tutoría
+              </button>
+            </nav>
+          )}
           <div className="topbar__user">
             <span className="topbar__name">{user.fullName}</span>
             <button type="button" className="button button--ghost button--small" onClick={handleLogout}>
@@ -151,7 +171,11 @@ export default function App() {
         </div>
       </header>
 
-      {!isStudent ? (
+      {isStudent && view === 'reservas' ? (
+        <main className="dashboard">
+          <ReservasApp />
+        </main>
+      ) : !isStudent ? (
         <main className="dashboard">
           <section className="panel panel--center">
             <h1>Solo para estudiantes</h1>

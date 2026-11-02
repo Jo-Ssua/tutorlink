@@ -138,6 +138,7 @@ async function main() {
       slotId: cancellableSlot.id,
       subjectId: subject.id,
       topic: 'Smoke test de reserva directa',
+      modality: cancellableSlot.modality === 'IN_PERSON' ? 'IN_PERSON' : 'VIRTUAL',
       description: 'Validacion del flujo de reserva tradicional',
     }),
   });

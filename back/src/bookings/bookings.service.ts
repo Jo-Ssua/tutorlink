@@ -123,6 +123,27 @@ export class BookingsService {
       });
     }
 
+    this.assertModalityCompatible(slot.modality, dto.modality);
+
+    const overlappingOwn = await this.prisma.booking.findFirst({
+      where: {
+        studentId: user.id,
+        status: {
+          in: [BookingStatus.PENDING, BookingStatus.ACCEPTED, BookingStatus.CONFIRMED],
+        },
+        startAt: { lt: slot.endAt },
+        endAt: { gt: slot.startAt },
+      },
+      select: { id: true },
+    });
+
+    if (overlappingOwn) {
+      throw new ConflictException({
+        code: 'STUDENT_BOOKING_OVERLAP',
+        message: 'Ya tienes una reserva activa que se cruza con este horario',
+      });
+    }
+
     const durationMinutes = differenceInMinutes(slot.startAt, slot.endAt);
     const price = calculatePrice(
       money(profile.hourlyRate),
@@ -155,7 +176,7 @@ export class BookingsService {
           slotId: slot.id,
           topic: dto.topic,
           description: dto.description,
-          modality: slot.modality,
+          modality: dto.modality,
           startAt: slot.startAt,
           endAt: slot.endAt,
           status: BookingStatus.PENDING,
@@ -655,6 +676,24 @@ export class BookingsService {
       booking: this.mapBooking(updated, user, user.role === Role.ADMIN ? 'admin' : 'tutor'),
       message: 'Sesion completada. El estudiante ya puede dejar una resena.',
     };
+  }
+
+  private assertModalityCompatible(slotModality: Modality, requested: Modality) {
+    const compatible =
+      slotModality === Modality.HYBRID ? requested !== Modality.HYBRID : slotModality === requested;
+
+    if (!compatible) {
+      throw new BadRequestException({
+        code: 'MODALITY_NOT_AVAILABLE',
+        message:
+          slotModality === Modality.VIRTUAL
+            ? 'Esta franja solo esta disponible en modalidad virtual'
+            : slotModality === Modality.IN_PERSON
+              ? 'Esta franja solo esta disponible en modalidad presencial'
+              : 'Debes elegir modalidad virtual o presencial',
+        details: [`Modalidad de la franja: ${slotModality}`],
+      });
+    }
   }
 
   private async resolveTutorSlot(dto: QuoteBookingDto) {

@@ -237,7 +237,7 @@ Estructura de `subjects` en `POST /tutor/apply`:
 | Metodo | Ruta | Rol | Descripcion | Body / Query |
 | --- | --- | --- | --- | --- |
 | POST | `/bookings/quote` | `STUDENT` | Cotizar una franja | `tutorProfileId`, `slotId` |
-| POST | `/bookings` | `STUDENT` | Crear reserva | `tutorProfileId`, `slotId`, `subjectId`, `topic`, `description?` |
+| POST | `/bookings` | `STUDENT` | Crear reserva | `tutorProfileId`, `slotId`, `subjectId`, `topic`, `modality` (`VIRTUAL` o `IN_PERSON`), `description?` |
 | GET | `/bookings/my` | `STUDENT` | Reservas del estudiante | `status?`, `from?`, `to?`, `page?`, `limit?` |
 | GET | `/bookings/tutor` | `TUTOR` | Reservas del tutor | `status?`, `from?`, `to?`, `page?`, `limit?` |
 | GET | `/bookings/:id` | Autenticado | Detalle de reserva | - |
@@ -266,9 +266,17 @@ Ejemplo de creacion:
   "slotId": "a0000000-0000-4000-8000-000000000001",
   "subjectId": "30000000-0000-4000-8000-000000000001",
   "topic": "Preparacion para el parcial de estructuras de datos",
+  "modality": "VIRTUAL",
   "description": "Necesito repasar arboles AVL y grafos."
 }
 ```
+
+Reglas de `POST /bookings` (SCRUM-21):
+
+- La reserva queda en `PENDING` (pendiente de respuesta del tutor). El tutor la acepta y luego el estudiante confirma el pago simulado.
+- La `modality` debe ser compatible con la franja: franja `VIRTUAL` solo admite `VIRTUAL`, `IN_PERSON` solo `IN_PERSON` y `HYBRID` admite cualquiera de las dos (`MODALITY_NOT_AVAILABLE` en caso contrario).
+- Si faltan datos obligatorios responde `400 VALIDATION_ERROR` con `error.details` (mensajes en espanol) y `error.fields` (mapa `campo -> mensajes`) para identificar los campos pendientes.
+- Si la franja ya fue tomada responde `409 SLOT_NOT_AVAILABLE`; si el estudiante ya tiene una reserva activa que se cruza responde `409 STUDENT_BOOKING_OVERLAP`.
 
 El pago es simulado; no se reciben datos bancarios. La comision se calcula en la cotizacion.
 
