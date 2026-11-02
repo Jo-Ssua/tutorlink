@@ -18,6 +18,7 @@ interface ErrorPayload {
   message?: string | string[];
   error?: string;
   details?: unknown;
+  fields?: Record<string, string[]>;
 }
 
 @Catch()
@@ -33,6 +34,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
     let code = 'INTERNAL_SERVER_ERROR';
     let message = 'Ocurrio un error inesperado';
     let details: unknown;
+    let fields: Record<string, string[]> | undefined;
 
     if (exception instanceof HttpException) {
       status = exception.getStatus();
@@ -46,6 +48,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
         ? 'La solicitud contiene datos invalidos'
         : String(rawMessage ?? exception.message);
       details = normalized.details ?? messages;
+      fields = normalized.fields;
     } else if (exception instanceof Prisma.PrismaClientKnownRequestError) {
       if (exception.code === 'P2002') {
         status = HttpStatus.CONFLICT;
@@ -88,6 +91,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
         code,
         message,
         ...(details ? { details } : {}),
+        ...(fields ? { fields } : {}),
       },
       meta: {
         timestamp: new Date().toISOString(),

@@ -1,4 +1,5 @@
-import { INestApplication, ValidationPipe } from '@nestjs/common';
+import { BadRequestException, INestApplication, ValidationPipe } from '@nestjs/common';
+import { ValidationError } from 'class-validator';
 import { ConfigService } from '@nestjs/config';
 import { DocumentBuilder, OpenAPIObject, SwaggerModule } from '@nestjs/swagger';
 import helmet from 'helmet';
@@ -28,6 +29,28 @@ export function configureApp(app: INestApplication): void {
       forbidNonWhitelisted: true,
       transform: true,
       transformOptions: { enableImplicitConversion: true },
+      exceptionFactory: (errors) => {
+        const fields: Record<string, string[]> = {};
+        const collect = (items: ValidationError[], parent = ''): void => {
+          for (const item of items) {
+            const path = parent ? `${parent}.${item.property}` : item.property;
+            if (item.constraints) {
+              fields[path] = Object.values(item.constraints);
+            }
+            if (item.children?.length) {
+              collect(item.children, path);
+            }
+          }
+        };
+        collect(errors);
+
+        return new BadRequestException({
+          code: 'VALIDATION_ERROR',
+          message: 'La solicitud contiene datos invalidos',
+          details: Object.values(fields).flat(),
+          fields,
+        });
+      },
     }),
   );
   app.enableShutdownHooks();
