@@ -6,6 +6,7 @@ import type {
   CreateBookingPayload,
   CreatedBooking,
   QuoteResult,
+  TutorSearchFilters,
   TutorList,
   TutorProfile,
 } from './types';
@@ -75,8 +76,14 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   return (body as ApiSuccess<T>).data;
 }
 
-export function listTutors(): Promise<TutorList> {
-  return request<TutorList>('/tutors?limit=50&sortBy=RATING');
+export function listTutors(filters: TutorSearchFilters = {}): Promise<TutorList> {
+  const query = new URLSearchParams({ limit: '50', sortBy: filters.sortBy ?? 'RELEVANCE' });
+  if (filters.q?.trim()) query.set('q', filters.q.trim());
+  if (filters.minRating !== undefined) query.set('minRating', String(filters.minRating));
+  if (filters.maxRate !== undefined) query.set('maxRate', String(filters.maxRate));
+  if (filters.modality) query.set('modality', filters.modality);
+  if (filters.subjectId) query.set('subjectId', filters.subjectId);
+  return request<TutorList>(`/tutors?${query.toString()}`);
 }
 
 export function getTutor(tutorProfileId: string): Promise<TutorProfile> {

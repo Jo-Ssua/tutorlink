@@ -8,6 +8,17 @@ export type BookingStatus =
   | 'CANCELLED'
   | 'COMPLETED';
 
+export type TutorSortBy = 'RELEVANCE' | 'RATING' | 'PRICE' | 'AVAILABILITY';
+
+export interface TutorSearchFilters {
+  q?: string;
+  minRating?: number;
+  maxRate?: number;
+  modality?: Modality;
+  subjectId?: string;
+  sortBy?: TutorSortBy;
+}
+
 export interface ApiSuccess<T> {
   success: true;
   data: T;
