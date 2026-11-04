@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { ReservasApiError, createBooking, quoteBooking } from '../api';
+import { ApiError } from '../../api';
+import { createBooking, quoteBooking } from '../api';
 import { Alert, Avatar, BottomBar, ScreenHeader } from '../components/ui';
 import {
   CHOSEN_MODALITY_LABEL,
@@ -121,7 +122,7 @@ export function DetailsScreen({
       });
       onCreated(result);
     } catch (caught) {
-      if (caught instanceof ReservasApiError && caught.fields && Object.keys(caught.fields).length > 0) {
+      if (caught instanceof ApiError && caught.fields && Object.keys(caught.fields).length > 0) {
         const mapped: Partial<Record<FieldKey, string>> = {};
         for (const key of ['subjectId', 'topic', 'modality'] as const) {
           if (caught.fields[key]) mapped[key] = caught.fields[key][0];
@@ -129,7 +130,7 @@ export function DetailsScreen({
         setServerFields(mapped);
         setPending(Object.keys(mapped) as FieldKey[]);
         setSubmitError({ message: caught.message, slotTaken: false });
-      } else if (caught instanceof ReservasApiError) {
+      } else if (caught instanceof ApiError) {
         setSubmitError({
           message: caught.message,
           slotTaken:

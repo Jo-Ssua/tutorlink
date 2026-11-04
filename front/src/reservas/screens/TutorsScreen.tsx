@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { ReservasApiError, listTutors } from '../api';
+import { ApiError } from '../../api';
+import { listTutors } from '../api';
 import { Alert, Avatar, Loading, ScreenHeader } from '../components/ui';
 import { formatCop } from '../format';
 import type { TutorCard } from '../types';
@@ -13,7 +14,7 @@ export function TutorsScreen({ onSelect }: { onSelect: (tutorId: string) => void
     listTutors()
       .then((result) => setTutors(result.items))
       .catch((caught: unknown) =>
-        setError(caught instanceof ReservasApiError ? caught.message : 'No se pudieron cargar los tutores.'),
+        setError(caught instanceof ApiError ? caught.message : 'No se pudieron cargar los tutores.'),
       );
   }, []);
 

@@ -1,11 +1,14 @@
 import { clearSession, getRefreshToken, loadSession, saveSession } from './session';
 import type {
+  AdminStats,
   ApiErrorBody,
   ApiSuccess,
   BookingList,
   CreateReviewPayload,
   CreateReviewResult,
   LoginResult,
+  SessionUser,
+  TutorApplicationList,
 } from './types';
 
 const API_URL = (import.meta.env.VITE_API_URL ?? 'http://localhost:3000/api/v1').replace(
@@ -17,13 +20,47 @@ export class ApiError extends Error {
   readonly code: string;
   readonly status: number;
   readonly details: string[];
+  /** Mensajes por campo que devuelve la validación del backend. */
+  readonly fields: Record<string, string[]>;
 
-  constructor(code: string, message: string, status: number, details: string[] = []) {
+  constructor(
+    code: string,
+    message: string,
+    status: number,
+    details: string[] = [],
+    fields: Record<string, string[]> = {},
+  ) {
     super(message);
     this.name = 'ApiError';
     this.code = code;
     this.status = status;
     this.details = details;
+    this.fields = fields;
+  }
+}
+
+type SessionExpiredListener = () => void;
+
+const sessionExpiredListeners = new Set<SessionExpiredListener>();
+
+/**
+ * Avisa cuando la sesión deja de servir y no se pudo renovar. Lo escucha el
+ * `AuthProvider`, que es el único que sabe limpiar el estado y redirigir: así
+ * cualquier pantalla puede llamar a la API sin preocuparse por el 401.
+ *
+ * Devuelve la función para darse de baja.
+ */
+export function onSessionExpired(listener: SessionExpiredListener): () => void {
+  sessionExpiredListeners.add(listener);
+  return () => {
+    sessionExpiredListeners.delete(listener);
+  };
+}
+
+function notifySessionExpired(): void {
+  clearSession();
+  for (const listener of sessionExpiredListeners) {
+    listener();
   }
 }
 
@@ -45,6 +82,7 @@ function toApiError(response: Response, body: unknown): ApiError {
       error.message ?? 'No fue posible completar la solicitud.',
       response.status,
       error.details ?? [],
+      error.fields ?? {},
     );
   }
 
@@ -87,7 +125,6 @@ async function refreshSession(): Promise<boolean> {
 
   const body = await readBody(response);
   if (!response.ok) {
-    clearSession();
     return false;
   }
 
@@ -96,7 +133,14 @@ async function refreshSession(): Promise<boolean> {
   return true;
 }
 
-async function request<T>(path: string, init: RequestInit = {}, canRetry = true): Promise<T> {
+/** Rutas públicas: un 401 suyo es un error de credenciales, no una sesión caída. */
+const PUBLIC_PATHS = ['/auth/login', '/auth/register', '/auth/verify-email', '/auth/refresh'];
+
+export async function request<T>(
+  path: string,
+  init: RequestInit = {},
+  canRetry = true,
+): Promise<T> {
   const session = loadSession();
   const response = await rawRequest(path, {
     ...init,
@@ -106,16 +150,15 @@ async function request<T>(path: string, init: RequestInit = {}, canRetry = true)
     },
   });
 
-  if (response.status === 401 && canRetry && !path.startsWith('/auth/login')) {
-    const refreshed = await refreshSession();
-    if (refreshed) {
+  const isPublic = PUBLIC_PATHS.some((publicPath) => path.startsWith(publicPath));
+
+  if (response.status === 401 && canRetry && !isPublic) {
+    if (await refreshSession()) {
       return request<T>(path, init, false);
     }
-    throw new ApiError(
-      'SESSION_EXPIRED',
-      'Tu sesión expiró. Inicia sesión nuevamente.',
-      401,
-    );
+
+    notifySessionExpired();
+    throw new ApiError('SESSION_EXPIRED', 'Tu sesión expiró. Inicia sesión nuevamente.', 401);
   }
 
   const body = await readBody(response);
@@ -150,13 +193,13 @@ export async function logoutRemote(): Promise<void> {
   }
 }
 
-export async function getMyCompletedBookings(
-  page = 1,
-  limit = 20,
-): Promise<BookingList> {
-  return request<BookingList>(
-    `/bookings/my?status=COMPLETED&page=${page}&limit=${limit}`,
-  );
+/** Confirma contra la API que la sesión guardada sigue siendo válida. */
+export async function getMe(): Promise<SessionUser> {
+  return request<SessionUser>('/auth/me');
+}
+
+export async function getMyCompletedBookings(page = 1, limit = 20): Promise<BookingList> {
+  return request<BookingList>(`/bookings/my?status=COMPLETED&page=${page}&limit=${limit}`);
 }
 
 export async function createBookingReview(
@@ -171,6 +214,18 @@ export async function createBookingReview(
     method: 'POST',
     body: JSON.stringify(body),
   });
+}
+
+export async function getTutorBookings(page = 1, limit = 20): Promise<BookingList> {
+  return request<BookingList>(`/bookings/tutor?page=${page}&limit=${limit}`);
+}
+
+export async function getAdminStats(): Promise<AdminStats> {
+  return request<AdminStats>('/admin/stats');
+}
+
+export async function getPendingTutorApplications(): Promise<TutorApplicationList> {
+  return request<TutorApplicationList>('/admin/tutor-applications?status=PENDING&limit=20');
 }
 
 export { API_URL };

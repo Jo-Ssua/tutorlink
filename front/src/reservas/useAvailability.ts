@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ReservasApiError, getAvailability } from './api';
+import { ApiError } from '../api';
+import { getAvailability } from './api';
 import type { AvailabilitySlot } from './types';
 
 const POLL_MS = 15_000;
@@ -51,7 +52,7 @@ export function useAvailability(
       setUpdatedAt(new Date());
     } catch (caught) {
       setError(
-        caught instanceof ReservasApiError
+        caught instanceof ApiError
           ? caught.message
           : 'No se pudieron cargar los horarios.',
       );

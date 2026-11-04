@@ -1,11 +1,7 @@
 import { useState } from 'react';
-import { login, API_URL } from '../api';
+import { API_URL } from '../api';
+import { useAuth } from '../auth/AuthContext';
 import { toFriendlyError, type FriendlyError } from '../errors';
-import type { SessionUser } from '../types';
-
-interface LoginCardProps {
-  onLoggedIn: (user: SessionUser) => void;
-}
 
 const DEMO_USERS = [
   {
@@ -20,7 +16,8 @@ const DEMO_USERS = [
 
 const DEMO_PASSWORD = 'TutorLink123*';
 
-export function LoginCard({ onLoggedIn }: LoginCardProps) {
+export function LoginCard() {
+  const { signIn, expired, dismissExpired } = useAuth();
   const [email, setEmail] = useState(DEMO_USERS[1].email);
   const [password, setPassword] = useState(DEMO_PASSWORD);
   const [loading, setLoading] = useState(false);
@@ -31,8 +28,8 @@ export function LoginCard({ onLoggedIn }: LoginCardProps) {
     setError(null);
     setLoading(true);
     try {
-      const result = await login(email.trim(), password);
-      onLoggedIn(result.user);
+      // El AuthProvider se encarga del estado y de llevarnos a la pantalla del rol.
+      await signIn(email.trim(), password);
     } catch (loginError) {
       setError(toFriendlyError(loginError));
     } finally {
@@ -61,6 +58,19 @@ export function LoginCard({ onLoggedIn }: LoginCardProps) {
           <p className="eyebrow">Acceso de estudiante</p>
           <h2>Inicia sesión para calificar</h2>
           <p className="muted">Usa las credenciales demo del seed o tu cuenta institucional.</p>
+
+          {expired && (
+            <div className="alert alert--error" role="status">
+              <p>Tu sesión se cerró. Inicia sesión otra vez para continuar.</p>
+              <button
+                type="button"
+                className="button button--ghost button--small"
+                onClick={dismissExpired}
+              >
+                Entendido
+              </button>
+            </div>
+          )}
 
           <div className="demo-users" aria-label="Cuentas demo">
             {DEMO_USERS.map((user) => (

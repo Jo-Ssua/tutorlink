@@ -8,21 +8,6 @@ export type BookingStatus =
   | 'CANCELLED'
   | 'COMPLETED';
 
-export interface ApiSuccess<T> {
-  success: true;
-  data: T;
-}
-
-export interface ApiErrorBody {
-  success: false;
-  error: {
-    code?: string;
-    message?: string;
-    details?: string[];
-    fields?: Record<string, string[]>;
-  };
-}
-
 export interface Pagination {
   page: number;
   limit: number;

@@ -56,6 +56,8 @@ export interface Booking {
   requestId: string | null;
   proposalId: string | null;
   subject: { id: string; name: string; code: string };
+  /** En la vista del tutor el estudiante llega anonimizado. */
+  student?: { id?: string; alias?: string; fullName?: string | null } | null;
   tutor: {
     id: string;
     fullName: string;
@@ -130,6 +132,7 @@ export interface ApiErrorBody {
     code: string;
     message: string;
     details?: string[];
+    fields?: Record<string, string[]>;
   };
   meta: {
     timestamp: string;
@@ -137,4 +140,38 @@ export interface ApiErrorBody {
     requestId: string;
     statusCode: number;
   };
+}
+
+export interface AdminStats {
+  users: { students: number; tutors: number; admins: number };
+  applications: { pendingTutorApplications: number; pendingSubjects: number };
+  bookings: { pending: number; confirmed: number; completed: number; cancelled: number };
+  simulatedRevenue: {
+    gross: number;
+    platformFees: number;
+    tutorEarnings: number;
+    currency: string;
+  };
+}
+
+export interface TutorApplication {
+  id: string;
+  userId: string;
+  fullName: string;
+  institutionalEmail: string;
+  userStatus: string;
+  verificationStatus: string;
+  hourlyRate: number;
+  experienceYears: number;
+  createdAt: string;
+  subjects: Array<{
+    id: string;
+    status: string;
+    subject: { id: string; name: string; code: string };
+  }>;
+}
+
+export interface TutorApplicationList {
+  items: TutorApplication[];
+  pagination: PaginationMeta;
 }

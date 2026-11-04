@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { ReservasApiError, getTutor } from '../api';
+import { ApiError } from '../../api';
+import { getTutor } from '../api';
 import { Alert, Avatar, BottomBar, Loading, ScreenHeader } from '../components/ui';
 import { MODALITY_LABEL, formatCop } from '../format';
 import type { TutorProfile } from '../types';
@@ -21,7 +22,7 @@ export function ProfileScreen({
     getTutor(tutorId)
       .then(setTutor)
       .catch((caught: unknown) =>
-        setError(caught instanceof ReservasApiError ? caught.message : 'No se pudo cargar el perfil.'),
+        setError(caught instanceof ApiError ? caught.message : 'No se pudo cargar el perfil.'),
       );
   }, [tutorId]);
 
