@@ -91,10 +91,26 @@ describe('rutas protegidas', () => {
     expect(
       await screen.findByRole('heading', { name: /Califica tus tutorías completadas/ }),
     ).toBeInTheDocument();
-    expect(await screen.findByRole('alert')).toHaveTextContent(
-      /disponible solo para administradores/,
-    );
     expect(screen.queryByRole('heading', { name: /Estado de la plataforma/ })).not.toBeInTheDocument();
+  });
+
+  it('no le cuenta al estudiante que la seccion era de otro rol', async () => {
+    withStoredSession('STUDENT');
+    stubApi({
+      '/auth/me': { data: sessionUser('STUDENT') },
+      '/bookings/my': { data: EMPTY_PAGE },
+      '/admin/stats': { data: ADMIN_STATS },
+    });
+
+    const { container } = renderApp('/app/admin');
+
+    await screen.findByRole('heading', { name: /Califica tus tutorías completadas/ });
+
+    // Nada de «esa seccion es solo para administradores»: eso le dibuja al
+    // usuario el mapa de roles de la plataforma.
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(container.textContent).not.toMatch(/solo para/i);
+    expect(container.textContent).not.toMatch(/administradores/i);
   });
 
   it('deja entrar al administrador a su panel', async () => {
