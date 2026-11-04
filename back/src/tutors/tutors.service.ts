@@ -1024,7 +1024,10 @@ export class TutorsService {
 
     const [reviews, completedSessions] = await Promise.all([
       this.prisma.review.findMany({
-        where: { tutorId: profile.userId },
+        where: {
+          tutorId: profile.userId,
+          booking: { status: BookingStatus.COMPLETED },
+        },
         orderBy: { createdAt: 'desc' },
         take: 5,
         include: { booking: { include: { subject: true } } },
@@ -1045,7 +1048,7 @@ export class TutorsService {
       verificationStatus: profile.verificationStatus,
       averageRating: roundMoney(profile.averageRating),
       reviewCount: profile.reviewCount,
-      hasReviews: profile.reviewCount > 0,
+      hasReviews: profile.reviewCount > 0 || reviews.length > 0,
       completedSessions,
       subjects: profile.subjects.map((link) => ({
         id: link.subject.id,
@@ -1058,10 +1061,13 @@ export class TutorsService {
       professors: profile.professors.map((link) => link.professor),
       nextAvailability: profile.availability.map((slot) => this.mapSlot(slot)),
       recentReviews: reviews.map((review) => ({
+        id: review.id,
         rating: review.rating,
         comment: review.comment,
         createdAt: review.createdAt,
         subject: review.booking.subject.name,
+        subjectCode: review.booking.subject.code,
+        verifiedSession: true,
       })),
     };
   }
@@ -1072,6 +1078,7 @@ export class TutorsService {
         id: tutorProfileId,
         verificationStatus: VerificationStatus.VERIFIED,
         isActive: true,
+        user: { status: UserStatus.ACTIVE },
       },
       select: { userId: true },
     });
@@ -1083,28 +1090,38 @@ export class TutorsService {
       });
     }
 
+    const where: Prisma.ReviewWhereInput = {
+      tutorId: profile.userId,
+      booking: { status: BookingStatus.COMPLETED },
+    };
+
     const [items, total] = await this.prisma.$transaction([
       this.prisma.review.findMany({
-        where: { tutorId: profile.userId },
+        where,
         orderBy: { createdAt: 'desc' },
         skip: getPaginationSkip(page, limit),
         take: limit,
         include: { booking: { include: { subject: true } } },
       }),
-      this.prisma.review.count({ where: { tutorId: profile.userId } }),
+      this.prisma.review.count({ where }),
     ]);
 
     return {
       items: items.map((review) => ({
+        id: review.id,
         rating: review.rating,
         comment: review.comment,
         createdAt: review.createdAt,
         subject: review.booking.subject.name,
+        subjectCode: review.booking.subject.code,
         verifiedSession: true,
       })),
       pagination: buildPaginationMeta(page, limit, total),
       hasReviews: total > 0,
-      message: total === 0 ? 'Este tutor aun no tiene resenas verificadas.' : null,
+      message:
+        total === 0
+          ? 'Este tutor aun no tiene resenas verificadas de sesiones completadas.'
+          : null,
     };
   }
 

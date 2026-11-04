@@ -28,6 +28,8 @@ export interface Pagination {
   limit: number;
   total: number;
   totalPages: number;
+  hasNextPage?: boolean;
+  hasPreviousPage?: boolean;
 }
 
 export interface SubjectRef {
@@ -80,6 +82,23 @@ export interface TutorProfile {
   completedSessions: number;
   subjects: TutorSubjectDetail[];
   nextAvailability: AvailabilitySlot[];
+}
+
+export interface TutorReview {
+  id: string;
+  rating: number;
+  comment: string | null;
+  createdAt: string;
+  subject: string;
+  subjectCode: string;
+  verifiedSession: true;
+}
+
+export interface TutorReviewList {
+  items: TutorReview[];
+  pagination: Pagination;
+  hasReviews: boolean;
+  message: string | null;
 }
 
 export interface PriceBreakdown {

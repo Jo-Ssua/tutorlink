@@ -8,6 +8,7 @@ import type {
   QuoteResult,
   TutorList,
   TutorProfile,
+  TutorReviewList,
 } from './types';
 
 const API_URL = (import.meta.env.VITE_API_URL ?? 'http://localhost:3000/api/v1').replace(
@@ -81,6 +82,16 @@ export function listTutors(): Promise<TutorList> {
 
 export function getTutor(tutorProfileId: string): Promise<TutorProfile> {
   return request<TutorProfile>(`/tutors/${tutorProfileId}`);
+}
+
+export function getTutorReviews(
+  tutorProfileId: string,
+  page = 1,
+  limit = 5,
+): Promise<TutorReviewList> {
+  return request<TutorReviewList>(
+    `/tutors/${tutorProfileId}/reviews?page=${page}&limit=${limit}`,
+  );
 }
 
 export function getAvailability(tutorProfileId: string): Promise<AvailabilitySlot[]> {

@@ -680,3 +680,128 @@ button:focus-visible {
     transform: rotate(360deg);
   }
 }
+
+/* SCRUM-18: reseñas verificadas en el perfil del tutor. */
+.rsv .reviews {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.rsv .reviews__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.rsv .reviews__head h3 {
+  margin: 2px 0 0;
+  font-size: 18px;
+}
+
+.rsv .reviews__summary {
+  flex-shrink: 0;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: var(--primary-soft);
+  color: var(--primary-dark);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.rsv .reviews__note {
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.rsv .reviews__empty {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 16px;
+  border: 1px dashed var(--line);
+  border-radius: var(--radius);
+  background: var(--bg);
+}
+
+.rsv .reviews__empty p {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.rsv .reviews__list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.rsv .review-item {
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.rsv .review-item__top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.rsv .review-item__score {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.rsv .review-item__verified {
+  margin-left: auto;
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: var(--success-soft);
+  color: var(--success);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.rsv .review-item__comment {
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--ink);
+}
+
+.rsv .review-item__meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.rsv .reviews__retry {
+  border: 0;
+  background: transparent;
+  color: var(--primary-dark);
+  font-weight: 700;
+  text-decoration: underline;
+  padding: 0;
+}
+
+.rsv .reviews__more {
+  align-self: flex-start;
+}
+
+.rsv .btn--ghost {
+  background: #fff;
+  border: 1px solid var(--line);
+  color: var(--primary-dark);
+}

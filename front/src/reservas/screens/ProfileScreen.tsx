@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { ReservasApiError, getTutor } from '../api';
 import { Alert, Avatar, BottomBar, Loading, ScreenHeader } from '../components/ui';
+import { ReviewsList } from '../components/ReviewsList';
 import { MODALITY_LABEL, formatCop } from '../format';
 import type { TutorProfile } from '../types';
 
@@ -75,6 +76,13 @@ export function ProfileScreen({
             </div>
             {tutor.bio && <p className="bio">“{tutor.bio}”</p>}
           </section>
+
+          <ReviewsList
+            tutorId={tutor.id}
+            hasReviews={tutor.hasReviews}
+            averageRating={tutor.averageRating}
+            reviewCount={tutor.reviewCount}
+          />
 
           <BottomBar>
             <button type="button" className="btn btn--primary" onClick={() => onReserve(tutor)}>
