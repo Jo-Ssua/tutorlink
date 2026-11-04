@@ -1,3 +1,4 @@
+import { Alert, Button, Card, Chip } from '@heroui/react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ApiError, createBookingReview, getMyCompletedBookings } from '../api';
 import { SessionCard } from '../components/SessionCard';
@@ -7,6 +8,22 @@ import type { Booking, CreateReviewPayload } from '../types';
 interface ToastState {
   tone: 'success' | 'error';
   message: string;
+}
+
+/** Una cifra del resumen; en móvil las tres caben en una fila. */
+function Stat({ value, label, accent = false }: { value: number; label: string; accent?: boolean }) {
+  return (
+    <div className="flex flex-col items-center gap-1 rounded-xl border border-border bg-surface p-3 text-center sm:items-start sm:p-4 sm:text-left">
+      <span
+        className={`text-2xl font-bold tabular-nums sm:text-3xl ${
+          accent ? 'text-accent' : 'text-foreground'
+        }`}
+      >
+        {value}
+      </span>
+      <span className="text-xs text-muted sm:text-sm">{label}</span>
+    </div>
+  );
 }
 
 /**
@@ -111,121 +128,133 @@ export function RatingsScreen() {
   }
 
   return (
-    <main className="dashboard">
-      <section className="hero">
-        <div>
-          <p className="eyebrow">SCRUM-17 · Calificación posterior a una sesión</p>
-          <h1>Califica tus tutorías completadas</h1>
-          <p className="hero__text">
-            Asigna de 1 a 5 estrellas y deja una reseña. Solo aparecen las sesiones marcadas
-            como completadas y cada una admite una única calificación.
+    <main className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-6 sm:px-6 sm:py-8">
+      <section className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+        <div className="flex flex-col gap-2">
+          <h1 className="text-2xl font-bold text-balance text-foreground sm:text-3xl">
+            Califica tus tutorías completadas
+          </h1>
+          <p className="max-w-2xl text-sm text-muted sm:text-base">
+            Asigna de 1 a 5 estrellas y deja una reseña. Solo aparecen las sesiones marcadas como
+            completadas y cada una admite una única calificación.
           </p>
         </div>
-        <div className="stats" aria-label="Resumen de sesiones">
-          <div className="stat stat--pending">
-            <span className="stat__value">{pending.length}</span>
-            <span className="stat__label">Por calificar</span>
-          </div>
-          <div className="stat">
-            <span className="stat__value">{reviewed.length}</span>
-            <span className="stat__label">Calificadas</span>
-          </div>
-          <div className="stat">
-            <span className="stat__value">{bookings.length}</span>
-            <span className="stat__label">Sesiones completadas</span>
-          </div>
+        <div
+          className="grid grid-cols-3 gap-2 sm:gap-3 lg:w-auto lg:shrink-0"
+          aria-label="Resumen de sesiones"
+        >
+          <Stat value={pending.length} label="Por calificar" accent />
+          <Stat value={reviewed.length} label="Calificadas" />
+          <Stat value={bookings.length} label="Completadas" />
         </div>
       </section>
 
       {listError && (
-        <div className="alert alert--error" role="alert">
-          <p>{listError.message}</p>
-          {listError.details.map((detail) => (
-            <p key={detail}>{detail}</p>
-          ))}
-          <button
-            type="button"
-            className="button button--ghost button--small"
-            onClick={() => void loadBookings(1, false)}
-          >
+        <Alert status="danger">
+          <Alert.Indicator />
+          <Alert.Content>
+            <Alert.Title>{listError.message}</Alert.Title>
+            {listError.details.length > 0 && (
+              <Alert.Description>
+                <ul className="mt-1 list-inside list-disc space-y-1">
+                  {listError.details.map((detail) => (
+                    <li key={detail}>{detail}</li>
+                  ))}
+                </ul>
+              </Alert.Description>
+            )}
+          </Alert.Content>
+          <Button size="sm" variant="tertiary" onPress={() => void loadBookings(1, false)}>
             Reintentar
-          </button>
-        </div>
+          </Button>
+        </Alert>
       )}
 
       {loading && (
-        <div className="skeleton-list" aria-live="polite" aria-busy="true">
+        <div className="flex flex-col gap-4" aria-live="polite" aria-busy="true">
           <span className="sr-only">Cargando sesiones completadas...</span>
-          <div className="skeleton" />
-          <div className="skeleton" />
+          <div className="h-40 animate-pulse rounded-xl bg-default" />
+          <div className="h-40 animate-pulse rounded-xl bg-default" />
         </div>
       )}
 
       {!loading && !listError && bookings.length === 0 && (
-        <section className="panel panel--center">
-          <h2>Aún no tienes sesiones completadas</h2>
-          <p>
-            Cuando el tutor marque una de tus reservas como completada, aparecerá aquí para que
-            puedas calificarla.
-          </p>
-        </section>
+        <Card>
+          <Card.Content className="flex flex-col items-center gap-2 py-10 text-center">
+            <h2 className="text-lg font-bold text-foreground">Aún no tienes sesiones completadas</h2>
+            <p className="max-w-md text-sm text-muted">
+              Cuando el tutor marque una de tus reservas como completada, aparecerá aquí para que
+              puedas calificarla.
+            </p>
+          </Card.Content>
+        </Card>
       )}
 
       {!loading && pending.length > 0 && (
-        <section className="section" aria-labelledby="pending-title">
-          <div className="section__heading">
-            <h2 id="pending-title">Pendientes por calificar</h2>
-            <span className="count">{pending.length}</span>
+        <section className="flex flex-col gap-4" aria-labelledby="pending-title">
+          <div className="flex items-center gap-2">
+            <h2 id="pending-title" className="text-lg font-bold text-foreground">
+              Pendientes por calificar
+            </h2>
+            <Chip size="sm" variant="soft" color="warning">
+              {pending.length}
+            </Chip>
           </div>
-          <div className="session-list">
+          <div className="flex flex-col gap-4">
             {pending.map((booking) => (
-              <SessionCard
-                key={booking.id}
-                booking={booking}
-                onSubmitReview={handleSubmitReview}
-              />
+              <SessionCard key={booking.id} booking={booking} onSubmitReview={handleSubmitReview} />
             ))}
           </div>
         </section>
       )}
 
       {!loading && reviewed.length > 0 && (
-        <section className="section" aria-labelledby="reviewed-title">
-          <div className="section__heading">
-            <h2 id="reviewed-title">Ya calificadas</h2>
-            <span className="count">{reviewed.length}</span>
+        <section className="flex flex-col gap-4" aria-labelledby="reviewed-title">
+          <div className="flex items-center gap-2">
+            <h2 id="reviewed-title" className="text-lg font-bold text-foreground">
+              Ya calificadas
+            </h2>
+            <Chip size="sm" variant="soft" color="success">
+              {reviewed.length}
+            </Chip>
           </div>
-          <div className="session-list">
+          <div className="flex flex-col gap-4">
             {reviewed.map((booking) => (
-              <SessionCard
-                key={booking.id}
-                booking={booking}
-                onSubmitReview={handleSubmitReview}
-              />
+              <SessionCard key={booking.id} booking={booking} onSubmitReview={handleSubmitReview} />
             ))}
           </div>
         </section>
       )}
 
       {!loading && hasNextPage && (
-        <div className="load-more">
-          <button
-            type="button"
-            className="button button--ghost"
-            disabled={loadingMore}
-            onClick={() => void loadBookings(page + 1, true)}
+        <div className="flex justify-center">
+          <Button
+            variant="outline"
+            isDisabled={loadingMore}
+            onPress={() => void loadBookings(page + 1, true)}
           >
             {loadingMore ? 'Cargando...' : 'Cargar más sesiones'}
-          </button>
+          </Button>
         </div>
       )}
 
       {toast && (
-        <div className={`toast toast--${toast.tone}`} role="status">
-          <p>{toast.message}</p>
-          <button type="button" aria-label="Cerrar aviso" onClick={() => setToast(null)}>
-            ×
-          </button>
+        /* Por encima de las pestañas inferiores en móvil, abajo a la derecha en escritorio. */
+        <div role="status" className="fixed inset-x-4 bottom-24 z-50 mx-auto max-w-md lg:bottom-6">
+          <Alert status={toast.tone === 'success' ? 'success' : 'danger'}>
+            <Alert.Indicator />
+            <Alert.Content>
+              <Alert.Title>{toast.message}</Alert.Title>
+            </Alert.Content>
+            <Button
+              size="sm"
+              variant="tertiary"
+              aria-label="Cerrar aviso"
+              onPress={() => setToast(null)}
+            >
+              Cerrar
+            </Button>
+          </Alert>
         </div>
       )}
     </main>
