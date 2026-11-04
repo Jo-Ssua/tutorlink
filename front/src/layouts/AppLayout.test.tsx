@@ -1,6 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { screen } from '@testing-library/react';
-import { EMPTY_PAGE, renderApp, sessionUser, stubApi, withStoredSession } from '../test/renderApp';
+import {
+  EMPTY_PAGE,
+  renderApp,
+  sessionUser,
+  stubApi,
+  waitForHeading,
+  withStoredSession,
+} from '../test/renderApp';
 
 const ADMIN_STATS = {
   users: { students: 2, tutors: 3, admins: 1 },
@@ -35,7 +42,7 @@ describe('navegación de la aplicación', () => {
     });
 
     renderApp('/app/calificaciones');
-    await screen.findByRole('heading', { name: /Califica tus tutorías completadas/ });
+    await waitForHeading(/Califica tus tutorías completadas/);
 
     const destinations = new Set(navDestinations());
     expect(destinations).toContain('/app/reservar');
@@ -52,7 +59,7 @@ describe('navegación de la aplicación', () => {
     });
 
     renderApp('/app/tutor');
-    await screen.findByRole('heading', { name: /Hola, Ana/ });
+    await waitForHeading(/Hola, Ana/);
 
     const destinations = new Set(navDestinations());
     expect(destinations).toEqual(new Set(['/app/tutor']));
@@ -67,7 +74,7 @@ describe('navegación de la aplicación', () => {
     });
 
     renderApp('/app/admin');
-    await screen.findByRole('heading', { name: /Estado de la plataforma/ });
+    await waitForHeading(/Estado de la plataforma/);
 
     const destinations = new Set(navDestinations());
     expect(destinations).toEqual(new Set(['/app/admin']));
@@ -81,7 +88,7 @@ describe('navegación de la aplicación', () => {
     });
 
     renderApp('/app/tutor');
-    await screen.findByRole('heading', { name: /Hola, Ana/ });
+    await waitForHeading(/Hola, Ana/);
 
     // Con un solo destino no hay entre qué moverse: solo queda la barra superior.
     expect(screen.getAllByRole('navigation', { name: 'Secciones' })).toHaveLength(1);

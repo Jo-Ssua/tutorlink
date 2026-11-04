@@ -9,7 +9,7 @@ import { afterEach } from 'vitest';
  * de cargada la máquina. No es lentitud de la aplicación, así que el margen va
  * aquí y no en cada `findBy`.
  */
-configure({ asyncUtilTimeout: 5_000 });
+configure({ asyncUtilTimeout: 10_000 });
 
 afterEach(() => {
   cleanup();

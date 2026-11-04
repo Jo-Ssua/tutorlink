@@ -1,7 +1,9 @@
+import { Button, Description, Input, Label, TextField } from '@heroui/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { resendVerification, verifyEmail } from '../api';
 import { AuthShell } from '../components/AuthShell';
+import { FormError, FormNotice } from '../components/FormFeedback';
 import { toFriendlyError, type FriendlyError } from '../errors';
 
 interface VerifyLocationState {
@@ -120,99 +122,78 @@ export function VerifyScreen() {
         'El enlace del correo también activa la cuenta.',
       ]}
     >
-      <p className="eyebrow">Paso 2 de 2</p>
-      <h2>Confirma tu correo</h2>
-      <p className="muted">Ingresa los 6 dígitos del código que te enviamos.</p>
+      <div className="flex flex-col gap-6">
+        <header className="flex flex-col gap-1">
+          <p className="text-xs font-bold tracking-widest text-accent uppercase">Paso 2 de 2</p>
+          <h2 className="text-2xl font-bold text-foreground">Confirma tu correo</h2>
+          <p className="text-muted">Ingresa los 6 dígitos del código que te enviamos.</p>
+        </header>
 
-      {notice && (
-        <div className="alert alert--success" role="status">
-          <p>{notice}</p>
-        </div>
-      )}
+        {notice && <FormNotice>{notice}</FormNotice>}
 
-      {devCode && (
-        <div className="alert alert--info" role="status">
-          <p>
-            Modo desarrollo: tu código es <code>{devCode}</code>
-          </p>
-        </div>
-      )}
-
-      <form onSubmit={handleSubmit} className="auth__form" noValidate>
-        <div className="field">
-          <label className="field__label" htmlFor="verify-email">
-            Correo institucional
-          </label>
-          <input
-            id="verify-email"
-            type="email"
-            autoComplete="username"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            required
-          />
-        </div>
-
-        <div className="field">
-          <div className="field__meta">
-            <label className="field__label" htmlFor="verify-code">
-              Código de verificación
-            </label>
-            {countdown !== null && (
-              <span className="field__hint">
-                {expired ? 'Código vencido' : `Vence en ${formatCountdown(countdown)}`}
-              </span>
-            )}
-          </div>
-          <input
-            id="verify-code"
-            className="code-input"
-            type="text"
-            inputMode="numeric"
-            autoComplete="one-time-code"
-            maxLength={6}
-            placeholder="000000"
-            value={code}
-            // Solo dígitos: evita pegar el código con espacios o guiones.
-            onChange={(event) => setCode(event.target.value.replace(/\D/g, '').slice(0, 6))}
-            required
-          />
-        </div>
-
-        {error && (
-          <div className="alert alert--error" role="alert">
-            <p>{error.message}</p>
-            {error.details.length > 0 && (
-              <ul>
-                {error.details.map((detail) => (
-                  <li key={detail}>{detail}</li>
-                ))}
-              </ul>
-            )}
-          </div>
+        {devCode && (
+          <FormNotice status="accent">Modo desarrollo: tu código es {devCode}</FormNotice>
         )}
 
-        <button
-          type="submit"
-          className="button button--primary button--wide"
-          disabled={loading || code.length !== 6}
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4" noValidate>
+          <TextField isRequired fullWidth name="email" type="email" value={email} onChange={setEmail}>
+            <Label>Correo institucional</Label>
+            <Input autoComplete="username" />
+          </TextField>
+
+          <TextField
+            isRequired
+            fullWidth
+            name="code"
+            value={code}
+            // Solo dígitos: evita pegar el código con espacios o guiones.
+            onChange={(value) => setCode(value.replace(/\D/g, '').slice(0, 6))}
+            isInvalid={expired}
+          >
+            <Label>Código de verificación</Label>
+            <Input
+              autoComplete="one-time-code"
+              inputMode="numeric"
+              maxLength={6}
+              placeholder="000000"
+              className="text-center text-2xl tracking-[0.5em] tabular-nums"
+            />
+            {countdown !== null && (
+              <Description>
+                {expired ? 'Código vencido: pide uno nuevo.' : `Vence en ${formatCountdown(countdown)}`}
+              </Description>
+            )}
+          </TextField>
+
+          <FormError error={error} />
+
+          <Button
+            type="submit"
+            size="lg"
+            className="w-full"
+            isDisabled={loading || code.length !== 6}
+          >
+            {loading ? 'Verificando...' : 'Activar mi cuenta'}
+          </Button>
+        </form>
+
+        <Button
+          variant="outline"
+          size="lg"
+          className="w-full"
+          isDisabled={resending || cooldown > 0 || email.trim() === ''}
+          onPress={() => void handleResend()}
         >
-          {loading ? 'Verificando...' : 'Activar mi cuenta'}
-        </button>
-      </form>
+          {cooldown > 0 ? `Reenviar código (${cooldown}s)` : 'Reenviar código'}
+        </Button>
 
-      <button
-        type="button"
-        className="button button--ghost button--wide"
-        onClick={() => void handleResend()}
-        disabled={resending || cooldown > 0 || email.trim() === ''}
-      >
-        {cooldown > 0 ? `Reenviar código (${cooldown}s)` : 'Reenviar código'}
-      </button>
-
-      <p className="auth__footer">
-        ¿Ya está activa? <Link to="/login">Inicia sesión</Link>
-      </p>
+        <p className="text-sm text-muted">
+          ¿Ya está activa?{' '}
+          <Link to="/login" className="font-semibold text-accent underline">
+            Inicia sesión
+          </Link>
+        </p>
+      </div>
     </AuthShell>
   );
 }

@@ -1,6 +1,6 @@
-import { render } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
+import { expect, vi } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
-import { vi } from 'vitest';
 import { AuthProvider } from '../auth/AuthContext';
 import { AppRoutes } from '../routes';
 import { saveSession } from '../session';
@@ -19,6 +19,18 @@ export function renderApp(path: string) {
       </AuthProvider>
     </MemoryRouter>,
   );
+}
+
+/**
+ * Espera a que la pantalla con ese encabezado quede montada.
+ *
+ * No vale `findByRole`: devuelve el primer nodo que aparece, y en una
+ * redirección el encabezado puede montarse y volver a montarse mientras React
+ * termina de acomodar el árbol, con lo que la prueba se queda con un nodo ya
+ * desprendido. `waitFor` vuelve a consultar el documento en cada intento.
+ */
+export function waitForHeading(name: string | RegExp) {
+  return waitFor(() => expect(screen.getByRole('heading', { name })).toBeInTheDocument());
 }
 
 export function sessionUser(role: Role = 'STUDENT'): SessionUser {

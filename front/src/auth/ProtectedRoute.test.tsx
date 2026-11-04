@@ -5,6 +5,7 @@ import {
   renderApp,
   sessionUser,
   stubApi,
+  waitForHeading,
   withStoredSession,
 } from '../test/renderApp';
 
@@ -29,7 +30,7 @@ describe('rutas protegidas', () => {
     stubApi({});
     renderApp('/app/calificaciones');
 
-    expect(await screen.findByRole('heading', { name: 'Inicia sesión' })).toBeInTheDocument();
+    await waitForHeading('Inicia sesión');
     expect(screen.queryByRole('heading', { name: /Califica tus tutorías/ })).not.toBeInTheDocument();
   });
 
@@ -42,9 +43,7 @@ describe('rutas protegidas', () => {
 
     renderApp('/app/calificaciones');
 
-    expect(
-      await screen.findByRole('heading', { name: /Califica tus tutorías completadas/ }),
-    ).toBeInTheDocument();
+    await waitForHeading(/Califica tus tutorías completadas/);
     await waitFor(() => expect(calls.some((url) => url.includes('/auth/me'))).toBe(true));
   });
 
@@ -60,9 +59,7 @@ describe('rutas protegidas', () => {
 
     renderApp('/app/calificaciones');
 
-    expect(
-      await screen.findByRole('heading', { name: 'Inicia sesión' }),
-    ).toBeInTheDocument();
+    await waitForHeading('Inicia sesión');
     expect(window.localStorage.length).toBe(0);
   });
 
@@ -75,7 +72,7 @@ describe('rutas protegidas', () => {
 
     renderApp('/');
 
-    expect(await screen.findByRole('heading', { name: /Hola, Ana/ })).toBeInTheDocument();
+    await waitForHeading(/Hola, Ana/);
   });
 
   it('devuelve al estudiante a su inicio si pide una seccion de otro rol', async () => {
@@ -88,9 +85,7 @@ describe('rutas protegidas', () => {
 
     renderApp('/app/admin');
 
-    expect(
-      await screen.findByRole('heading', { name: /Califica tus tutorías completadas/ }),
-    ).toBeInTheDocument();
+    await waitForHeading(/Califica tus tutorías completadas/);
     expect(screen.queryByRole('heading', { name: /Estado de la plataforma/ })).not.toBeInTheDocument();
   });
 
@@ -104,7 +99,7 @@ describe('rutas protegidas', () => {
 
     const { container } = renderApp('/app/admin');
 
-    await screen.findByRole('heading', { name: /Califica tus tutorías completadas/ });
+    await waitForHeading(/Califica tus tutorías completadas/);
 
     // Nada de «esa seccion es solo para administradores»: eso le dibuja al
     // usuario el mapa de roles de la plataforma.
@@ -123,17 +118,13 @@ describe('rutas protegidas', () => {
 
     renderApp('/app/admin');
 
-    expect(
-      await screen.findByRole('heading', { name: /Estado de la plataforma/ }),
-    ).toBeInTheDocument();
+    await waitForHeading(/Estado de la plataforma/);
   });
 
   it('atiende /verificar sin sesion, porque es el destino del enlace del correo', async () => {
     stubApi({});
     renderApp('/verificar?email=ana.torres@universidad.edu.co&code=123456');
 
-    expect(
-      await screen.findByRole('heading', { name: /Verificación de la cuenta/ }),
-    ).toBeInTheDocument();
+    await waitForHeading(/Verificación de la cuenta/);
   });
 });

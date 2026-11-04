@@ -1,9 +1,11 @@
+import { Button, Input, Label, TextField } from '@heroui/react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { acceptedEmailFormat } from '../auth/institutionalEmail';
 import { toFriendlyError, type FriendlyError } from '../errors';
 import { AuthShell } from './AuthShell';
+import { FormError, FormNotice } from './FormFeedback';
 
 interface LoginCardProps {
   /** Aviso que llega de otra pantalla, por ejemplo al verificar la cuenta. */
@@ -41,83 +43,69 @@ export function LoginCard({ notice }: LoginCardProps) {
         'Reseñas de estudiantes que ya tomaron la sesión.',
       ]}
     >
-      <p className="eyebrow">Acceso</p>
-      <h2>Inicia sesión</h2>
-      <p className="muted">Entra con tu correo institucional.</p>
+      <div className="flex flex-col gap-6">
+        <header className="flex flex-col gap-1">
+          <p className="text-xs font-bold tracking-widest text-accent uppercase">Acceso</p>
+          <h2 className="text-2xl font-bold text-foreground">Inicia sesión</h2>
+          <p className="text-muted">Entra con tu correo institucional.</p>
+        </header>
 
-      {notice && (
-        <div className="alert alert--success" role="status">
-          <p>{notice}</p>
-        </div>
-      )}
+        {notice && <FormNotice>{notice}</FormNotice>}
 
-      {expired && (
-        <div className="alert alert--error" role="status">
-          <p>Tu sesión se cerró. Inicia sesión otra vez para continuar.</p>
-          <button
-            type="button"
-            className="button button--ghost button--small"
-            onClick={dismissExpired}
-          >
-            Entendido
-          </button>
-        </div>
-      )}
-
-      <form onSubmit={handleSubmit} className="auth__form" noValidate>
-        <div className="field">
-          <label className="field__label" htmlFor="login-email">
-            Correo institucional
-          </label>
-          <input
-            id="login-email"
-            type="email"
-            autoComplete="username"
-            placeholder={`nombre${acceptedEmailFormat().split(' o ')[0]}`}
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            required
-          />
-        </div>
-
-        <div className="field">
-          <label className="field__label" htmlFor="login-password">
-            Contraseña
-          </label>
-          <input
-            id="login-password"
-            type="password"
-            autoComplete="current-password"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            required
-          />
-        </div>
-
-        {error && (
-          <div className="alert alert--error" role="alert">
-            <p>{error.message}</p>
-            {error.details.length > 0 && (
-              <ul>
-                {error.details.map((detail) => (
-                  <li key={detail}>{detail}</li>
-                ))}
-              </ul>
-            )}
+        {expired && (
+          <div className="flex flex-col items-start gap-3">
+            <FormNotice status="accent">
+              Tu sesión se cerró. Inicia sesión otra vez para continuar.
+            </FormNotice>
+            <Button size="sm" variant="tertiary" onPress={dismissExpired}>
+              Entendido
+            </Button>
           </div>
         )}
 
-        <button type="submit" className="button button--primary button--wide" disabled={loading}>
-          {loading ? 'Ingresando...' : 'Ingresar'}
-        </button>
-      </form>
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4" noValidate>
+          <TextField isRequired fullWidth name="email" type="email" value={email} onChange={setEmail}>
+            <Label>Correo institucional</Label>
+            <Input
+              autoComplete="username"
+              placeholder={`nombre${acceptedEmailFormat().split(' o ')[0]}`}
+            />
+          </TextField>
 
-      <p className="auth__footer">
-        ¿No tienes cuenta? <Link to="/registro">Regístrate con tu correo institucional</Link>
-      </p>
-      <p className="auth__footer">
-        ¿No recibiste el código? <Link to="/verificar">Verifica tu cuenta</Link>
-      </p>
+          <TextField
+            isRequired
+            fullWidth
+            name="password"
+            type="password"
+            value={password}
+            onChange={setPassword}
+          >
+            <Label>Contraseña</Label>
+            <Input autoComplete="current-password" />
+          </TextField>
+
+          <FormError error={error} />
+
+          <Button type="submit" size="lg" className="w-full" isDisabled={loading}>
+            {loading ? 'Ingresando...' : 'Ingresar'}
+          </Button>
+        </form>
+
+        <div className="flex flex-col gap-2 text-sm text-muted">
+          <p>
+            ¿No tienes cuenta?{' '}
+            <Link to="/registro" className="font-semibold text-accent underline">
+              Regístrate con tu correo institucional
+            </Link>
+          </p>
+          <p>
+            ¿No recibiste el código?{' '}
+            <Link to="/verificar" className="font-semibold text-accent underline">
+              Verifica tu cuenta
+            </Link>
+          </p>
+        </div>
+      </div>
     </AuthShell>
   );
 }

@@ -87,10 +87,14 @@ describe('registro con correo institucional', () => {
     });
     renderApp('/registro');
 
-    // El programa llega del catálogo público.
+    // El programa llega del catálogo público. La lista solo existe con el
+    // desplegable abierto, así que hay que abrirlo para verla.
+    const picker = await screen.findByRole('button', { name: /Programa académico/ });
+    await userEvent.click(picker);
     expect(
       await screen.findByRole('option', { name: /Ingeniería de Sistemas/ }),
     ).toBeInTheDocument();
+    await userEvent.keyboard('{Escape}');
 
     const user = await fillForm();
     await user.click(screen.getByRole('button', { name: 'Crear cuenta' }));
