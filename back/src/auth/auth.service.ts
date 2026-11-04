@@ -30,12 +30,36 @@ const VERIFICATION_TTL_MINUTES = 15;
 const RESEND_COOLDOWN_MS = 60_000;
 /** Intentos fallidos de codigo antes de invalidarlo y exigir uno nuevo. */
 const MAX_VERIFICATION_ATTEMPTS = 5;
+/** Intentos de inicio de sesion fallidos antes de bloquear la cuenta. */
+const MAX_FAILED_LOGINS = 5;
+/** Duracion del bloqueo por intentos fallidos. */
+const LOGIN_LOCK_MINUTES = 15;
+
+/**
+ * Hash bcrypt de un valor aleatorio descartado. Se compara contra el cuando el
+ * correo no existe, para que una cuenta inexistente tarde lo mismo que una real
+ * y el tiempo de respuesta no permita distinguirlas.
+ */
+const DECOY_PASSWORD_HASH = '$2b$12$aexmW2MquiLQLL3Z0ERsEOGIcnQDXRO56/SchSVyx2OjZZZvJmKbi';
+
+/** Relaciones que acompanan al usuario en login, refresh y /auth/me. */
+const USER_PROFILES_INCLUDE = {
+  studentProfile: { include: { program: { include: { faculty: true } } } },
+  tutorProfile: {
+    include: {
+      subjects: { include: { subject: true } },
+      professors: { include: { professor: true } },
+    },
+  },
+};
 
 interface TokenPayload {
   sub: string;
   email: string;
   role: Role;
   type: 'access' | 'refresh';
+  /** Version de sesion: al cerrar sesion se incrementa y el token deja de valer. */
+  tv: number;
   jti?: string;
 }
 
@@ -223,21 +247,36 @@ export class AuthService {
   async login(dto: LoginDto) {
     const user = await this.prisma.user.findUnique({
       where: { email: dto.email },
-      include: {
-        studentProfile: { include: { program: true } },
-        tutorProfile: {
-          include: {
-            subjects: { include: { subject: true } },
-            professors: { include: { professor: true } },
-          },
-        },
-      },
+      include: USER_PROFILES_INCLUDE,
     });
 
-    if (!user || !(await bcrypt.compare(dto.password, user.passwordHash))) {
-      throw new UnauthorizedException({
-        code: 'INVALID_CREDENTIALS',
-        message: 'Credenciales invalidas',
+    // La comparacion se hace siempre, incluso sin cuenta, para que el tiempo de
+    // respuesta sea el mismo y no revele si el correo esta registrado.
+    const passwordMatches = await bcrypt.compare(
+      dto.password,
+      user?.passwordHash ?? DECOY_PASSWORD_HASH,
+    );
+
+    // Una cuenta bloqueada responde igual que una contrasena incorrecta: no se
+    // informa el bloqueo ni cuanto falta para que termine.
+    if (user && this.isLocked(user)) {
+      throw this.invalidCredentials();
+    }
+
+    if (!user || !passwordMatches) {
+      if (user) {
+        await this.registerFailedLogin(user);
+      }
+
+      throw this.invalidCredentials();
+    }
+
+    // Desde aqui la contrasena es correcta: quien pregunta ya demostro ser el
+    // dueno de la cuenta, asi que el motivo real del rechazo no filtra nada.
+    if (user.failedLoginAttempts > 0 || user.lockedUntil) {
+      await this.prisma.user.update({
+        where: { id: user.id },
+        data: { failedLoginAttempts: 0, lockedUntil: null },
       });
     }
 
@@ -287,15 +326,7 @@ export class AuthService {
 
     const user = await this.prisma.user.findUnique({
       where: { id: payload.sub },
-      include: {
-        studentProfile: { include: { program: true } },
-        tutorProfile: {
-          include: {
-            subjects: { include: { subject: true } },
-            professors: { include: { professor: true } },
-          },
-        },
-      },
+      include: USER_PROFILES_INCLUDE,
     });
 
     if (!user || user.status !== UserStatus.ACTIVE) {
@@ -306,7 +337,11 @@ export class AuthService {
     }
 
     const receivedHash = this.hashToken(dto.refreshToken);
-    if (!user.refreshTokenHash || !this.safeEqual(receivedHash, user.refreshTokenHash)) {
+    if (
+      !user.refreshTokenHash ||
+      !this.safeEqual(receivedHash, user.refreshTokenHash) ||
+      payload.tv !== user.tokenVersion
+    ) {
       throw new UnauthorizedException({
         code: 'REFRESH_TOKEN_REVOKED',
         message: 'El refresh token fue revocado. Inicia sesion nuevamente.',
@@ -317,10 +352,18 @@ export class AuthService {
     return { ...tokens, user: this.toSafeUser(user) };
   }
 
+  /**
+   * Cierra la sesion de verdad: borra el refresh token e incrementa
+   * `tokenVersion`, con lo que los access tokens ya emitidos dejan de valer de
+   * inmediato en vez de seguir vivos hasta que expiren.
+   *
+   * El modelo guarda un solo refresh token por usuario, asi que esto cierra la
+   * sesion en todos los dispositivos.
+   */
   async logout(userId: string) {
     await this.prisma.user.update({
       where: { id: userId },
-      data: { refreshTokenHash: null },
+      data: { refreshTokenHash: null, tokenVersion: { increment: 1 } },
     });
 
     return { loggedOut: true, message: 'Sesion cerrada correctamente' };
@@ -329,15 +372,7 @@ export class AuthService {
   async me(userId: string) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      include: {
-        studentProfile: { include: { program: { include: { faculty: true } } } },
-        tutorProfile: {
-          include: {
-            subjects: { include: { subject: true } },
-            professors: { include: { professor: true } },
-          },
-        },
-      },
+      include: USER_PROFILES_INCLUDE,
     });
 
     if (!user) {
@@ -351,6 +386,7 @@ export class AuthService {
     id: string;
     email: string;
     role: Role;
+    tokenVersion: number;
   }): Promise<{
     accessToken: string;
     refreshToken: string;
@@ -362,7 +398,13 @@ export class AuthService {
     const refreshExpiresIn = this.config.getOrThrow<string>('jwt.refreshExpiresIn');
 
     const accessToken = await this.jwt.signAsync(
-      { sub: user.id, email: user.email, role: user.role, type: 'access' },
+      {
+        sub: user.id,
+        email: user.email,
+        role: user.role,
+        type: 'access',
+        tv: user.tokenVersion,
+      },
       {
         secret: this.config.getOrThrow<string>('jwt.accessSecret'),
         expiresIn: accessExpiresIn as JwtSignOptions['expiresIn'],
@@ -375,6 +417,7 @@ export class AuthService {
         email: user.email,
         role: user.role,
         type: 'refresh',
+        tv: user.tokenVersion,
         jti: randomUUID(),
       },
       {
@@ -531,6 +574,48 @@ export class AuthService {
         message: `El programa indicado no pertenece a las facultades habilitadas para ${domain}: ${allowedFaculties.join(', ')}`,
       });
     }
+  }
+
+  /**
+   * Unico error de credenciales del login. No distingue entre correo
+   * inexistente, contrasena incorrecta y cuenta bloqueada, para no permitir
+   * averiguar que correos estan registrados.
+   */
+  private invalidCredentials(): UnauthorizedException {
+    return new UnauthorizedException({
+      code: 'INVALID_CREDENTIALS',
+      message: 'Credenciales invalidas',
+    });
+  }
+
+  private isLocked(user: { lockedUntil: Date | null }): boolean {
+    return user.lockedUntil !== null && user.lockedUntil > new Date();
+  }
+
+  /**
+   * Suma un intento fallido y, al llegar al tope, bloquea la cuenta un rato.
+   * Complementa el limite por IP del throttler, que no frena a quien reparte
+   * los intentos entre varias direcciones.
+   *
+   * El contador se reinicia al bloquear, para que al terminar el bloqueo la
+   * persona disponga de nuevo de todos los intentos.
+   */
+  private async registerFailedLogin(user: {
+    id: string;
+    failedLoginAttempts: number;
+  }): Promise<void> {
+    const attempts = user.failedLoginAttempts + 1;
+
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data:
+        attempts >= MAX_FAILED_LOGINS
+          ? {
+              failedLoginAttempts: 0,
+              lockedUntil: addMinutes(new Date(), LOGIN_LOCK_MINUTES),
+            }
+          : { failedLoginAttempts: attempts },
+    });
   }
 
   private assertInstitutionalEmail(email: string): void {
