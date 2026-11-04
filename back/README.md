@@ -16,6 +16,23 @@ El proyecto implementa las historias de usuario de `HUs.csv` con NestJS, Postgre
 - Docker + Docker Compose
 - ESLint + Prettier
 
+### Dependencias fijadas por seguridad
+
+`package.json` declara un bloque `overrides` que sube dos dependencias
+transitivas que NestJS 11 fija de forma exacta y que tenian avisos de
+seguridad abiertos:
+
+| Paquete | Lo fija | Version exacta | Se sube a |
+| --- | --- | --- | --- |
+| `multer` | `@nestjs/platform-express` 11 | 2.4.0 | 2.5.0 |
+| `js-yaml` | `@nestjs/swagger` 11 | 5.3.0 | 5.4.3 o superior |
+
+Con esos dos overrides `npm audit --omit=dev` queda en cero avisos sin tocar
+NestJS. Los overrides se pueden quitar cuando el proyecto pase a NestJS 12,
+que ya trae las versiones corregidas; esa migracion exige Node 24.9 o
+superior, porque NestJS 12 se publica solo como ESM y Jest no lo puede cargar
+en versiones anteriores de Node.
+
 ## Arquitectura
 
 | Modulo | Responsabilidad |
