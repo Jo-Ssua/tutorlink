@@ -8,7 +8,7 @@ El proyecto implementa las historias de usuario de `HUs.csv` con NestJS, Postgre
 
 - NestJS 11 + TypeScript
 - PostgreSQL 16
-- Prisma ORM 6
+- Prisma ORM 7 (driver adapter `@prisma/adapter-pg`)
 - JWT access/refresh con Passport
 - class-validator / class-transformer
 - Swagger / OpenAPI
@@ -66,7 +66,7 @@ Los errores usan:
 
 ## Requisitos
 
-- Node.js 24 o superior
+- Node.js 24 o superior (Prisma 7 exige 20.19+, 22.12+ o 24+)
 - npm 11 o superior
 - Docker y Docker Compose (recomendado)
 - PostgreSQL 16 si se ejecuta sin Docker
@@ -329,7 +329,7 @@ Ver `.env.example` para los valores completos.
 | `npm run test:e2e` | Pruebas e2e con Supertest |
 | `npm run test:cov` | Cobertura |
 | `npm run prisma:generate` | Genera Prisma Client |
-| `npm run prisma:migrate` | Crea/aplica migracion en desarrollo |
+| `npm run prisma:migrate` | Crea/aplica migracion en desarrollo; en Prisma 7 ya no genera el cliente ni ejecuta el seed |
 | `npm run prisma:deploy` | Aplica migraciones |
 | `npm run prisma:seed` | Ejecuta seed demo |
 | `npm run openapi:export` | Genera `docs/openapi.json` |
@@ -368,6 +368,7 @@ src/
   app.module.ts     Modulo raiz
   bootstrap.ts      Configuracion global y Swagger
   main.ts           Punto de entrada
+prisma.config.ts    Configuracion de la CLI de Prisma (esquema, migraciones, seed, datasource)
 prisma/
   migrations/       Migraciones SQL
   schema.prisma     Modelo de datos
@@ -403,7 +404,11 @@ docs/
 - El seed es idempotente mediante `upsert`, pero no elimina datos creados por pruebas. Para un estado limpio usar `prisma migrate reset` o `docker compose down -v`.
 - Swagger permite autenticarse con el boton `Authorize` usando el access token.
 - `docs/openapi.json` se regenera con `npm run openapi:export` y actualmente documenta 59 rutas.
-- Prisma muestra un aviso de deprecacion por `package.json#prisma`; es compatible con Prisma 6 y puede migrarse a `prisma.config.ts` en una version futura.
+- La configuracion de la CLI de Prisma vive en `prisma.config.ts` (esquema, carpeta de migraciones, comando de seed y `DATABASE_URL`). El bloque `package.json#prisma` ya no existe y Prisma 7 no imprime ningun aviso de deprecacion.
+- Prisma 7 no carga `.env` por su cuenta: `prisma.config.ts` hace `import 'dotenv/config'`. La URL se lee con `process.env.DATABASE_URL ?? ''` para que `prisma generate` siga funcionando sin base de datos configurada.
+- `datasource db` ya no declara `url`; en Prisma 7 esa propiedad solo se acepta en `prisma.config.ts`.
+- Prisma 7 exige un driver adapter: `PrismaService` y el seed construyen el cliente con `new PrismaPg({ connectionString: ... })` de `@prisma/adapter-pg`.
+- El generador sigue en `prisma-client-js`, que Prisma 7 acepta pero marca para retirar en versiones futuras; migrarlo a `prisma-client` con `output` propio implica cambiar los imports de `@prisma/client` en todo el backend.
 
 ## Licencia
 
