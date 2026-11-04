@@ -95,8 +95,7 @@ button {
 .star--button:focus-visible,
 input:focus-visible,
 select:focus-visible,
-textarea:focus-visible,
-.demo-user:focus-visible {
+textarea:focus-visible {
   outline: 3px solid rgba(91, 61, 245, 0.35);
   outline-offset: 2px;
 }
@@ -283,51 +282,9 @@ textarea:focus-visible,
   font-size: 0.92rem;
 }
 
-.demo-users {
-  display: grid;
-  gap: 0.5rem;
-  margin: 1.4rem 0;
-}
-
-.demo-user {
-  padding: 0.65rem 0.9rem;
-  text-align: left;
-  border: 1px solid var(--line);
-  border-radius: var(--radius-sm);
-  background: var(--surface);
-  color: var(--ink-soft);
-  font-size: 0.88rem;
-  font-weight: 600;
-}
-
-.demo-user:hover {
-  border-color: #cfc6ee;
-  background: var(--surface-soft);
-}
-
-.demo-user--active {
-  border-color: var(--primary);
-  background: var(--primary-soft);
-  color: var(--primary-dark);
-}
-
 .auth__form {
   display: grid;
   gap: 1rem;
-}
-
-.auth__api {
-  margin-top: 1.2rem;
-  font-size: 0.75rem;
-  color: var(--muted);
-  overflow-wrap: anywhere;
-}
-
-.auth__api code {
-  font-size: 0.72rem;
-  background: var(--surface-soft);
-  padding: 0.1rem 0.35rem;
-  border-radius: 6px;
 }
 
 /* Form fields */

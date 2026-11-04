@@ -23,18 +23,26 @@ describe('pantalla de inicio de sesion', () => {
     expect(screen.getByLabelText('Contraseña')).toHaveValue('');
   });
 
-  it('los atajos de desarrollo solo rellenan el correo', async () => {
+  it('no enumera cuentas ni roles antes de autenticar', async () => {
     stubApi({});
-    renderApp('/login');
+    const { container } = renderApp('/login');
 
-    const shortcut = await screen.findByRole('button', { name: /Ana · tutora/ });
-    await userEvent.click(shortcut);
+    await screen.findByRole('heading', { name: 'Inicia sesión' });
 
-    expect(screen.getByLabelText('Correo institucional')).toHaveValue(
-      'ana.tutor@universidad.edu.co',
-    );
-    // El atajo nunca escribe la contrasena: hay que teclearla.
-    expect(screen.getByLabelText('Contraseña')).toHaveValue('');
+    // Ni un correo del seed, ni donde buscar su contrasena.
+    expect(container.textContent).not.toMatch(/@universidad\.edu\.co/);
+    expect(container.textContent).not.toMatch(/README/i);
+    expect(screen.queryByRole('button', { name: /Administrador/i })).toBeNull();
+  });
+
+  it('no publica la direccion de la API', async () => {
+    stubApi({});
+    const { container } = renderApp('/login');
+
+    await screen.findByRole('heading', { name: 'Inicia sesión' });
+
+    expect(container.querySelector('code')).toBeNull();
+    expect(container.textContent).not.toMatch(/\/api\/v1/);
   });
 
   it('ofrece registrarse y verificar la cuenta', async () => {

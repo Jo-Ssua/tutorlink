@@ -59,13 +59,15 @@ npx ts-node --transpile-only scripts/seed-rating-demo.ts
 
 Este script es idempotente y solo crea/actualiza una franja, una reserva completada, su pago simulado y elimina la reseña de **esa reserva demo** para dejarla pendiente. No modifica las reservas ni reseñas de las demás historias.
 
-Cuenta demo resultante:
+Cuentas del seed. La pantalla de inicio de sesión no las muestra: enumerar
+cuentas y roles antes de autenticar le da a cualquiera medio trabajo hecho.
 
 | Rol | Correo | Contraseña |
 | --- | --- | --- |
-| Estudiante (Juan) | `juan.estudiante@estudiantes.universidad.edu.co` | `TutorLink123*` |
-
-También se puede ingresar con `estudiante@universidad.edu.co` para ver sesiones ya calificadas.
+| Estudiante (Juan), con sesiones por calificar | `juan.estudiante@estudiantes.universidad.edu.co` | `TutorLink123*` |
+| Estudiante (María), con sesiones ya calificadas | `estudiante@universidad.edu.co` | `TutorLink123*` |
+| Tutora (Ana) | `ana.tutor@universidad.edu.co` | `TutorLink123*` |
+| Administrador | `admin@universidad.edu.co` | `TutorLink123*` |
 
 ### 3. Frontend
 

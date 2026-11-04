@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { API_URL } from '../api';
 import { useAuth } from '../auth/AuthContext';
 import { acceptedEmailFormat } from '../auth/institutionalEmail';
 import { toFriendlyError, type FriendlyError } from '../errors';
@@ -10,17 +9,6 @@ interface LoginCardProps {
   /** Aviso que llega de otra pantalla, por ejemplo al verificar la cuenta. */
   notice?: string;
 }
-
-/** Correos del seed, para no escribirlos a mano en desarrollo. */
-const DEMO_EMAILS = [
-  { label: 'María · sesiones ya calificadas', email: 'estudiante@universidad.edu.co' },
-  {
-    label: 'Juan · sesiones por calificar',
-    email: 'juan.estudiante@estudiantes.universidad.edu.co',
-  },
-  { label: 'Ana · tutora', email: 'ana.tutor@universidad.edu.co' },
-  { label: 'Administrador', email: 'admin@universidad.edu.co' },
-];
 
 export function LoginCard({ notice }: LoginCardProps) {
   const { signIn, expired, dismissExpired } = useAuth();
@@ -73,26 +61,6 @@ export function LoginCard({ notice }: LoginCardProps) {
           >
             Entendido
           </button>
-        </div>
-      )}
-
-      {/* Atajo solo para desarrollo: rellena el correo, nunca la contraseña. */}
-      {import.meta.env.DEV && (
-        <div className="demo-users" aria-label="Cuentas de prueba">
-          {DEMO_EMAILS.map((demo) => (
-            <button
-              key={demo.email}
-              type="button"
-              className={`demo-user${email === demo.email ? ' demo-user--active' : ''}`}
-              onClick={() => {
-                setEmail(demo.email);
-                setError(null);
-              }}
-            >
-              {demo.label}
-            </button>
-          ))}
-          <p className="field__hint">La contraseña de estas cuentas está en el README.</p>
         </div>
       )}
 
@@ -149,10 +117,6 @@ export function LoginCard({ notice }: LoginCardProps) {
       </p>
       <p className="auth__footer">
         ¿No recibiste el código? <Link to="/verificar">Verifica tu cuenta</Link>
-      </p>
-
-      <p className="auth__api">
-        API: <code>{API_URL}</code>
       </p>
     </AuthShell>
   );
