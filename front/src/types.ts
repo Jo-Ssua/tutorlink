@@ -10,6 +10,37 @@ export type BookingStatus =
 
 export type Modality = 'IN_PERSON' | 'VIRTUAL' | 'HYBRID';
 
+export type VerificationStatus = 'PENDING' | 'VERIFIED' | 'REJECTED';
+
+export interface TutorOwnProfile {
+  id: string;
+  fullName: string;
+  email: string;
+  bio: string | null;
+  experienceYears: number;
+  hourlyRate: number;
+  verificationStatus: VerificationStatus;
+  rejectionReason: string | null;
+  modalities: Modality[];
+  isActive: boolean;
+  maxWeeklySessions: number | null;
+  subjects: Array<{
+    id: string;
+    status: VerificationStatus;
+    evidenceUrl: string | null;
+    rejectionReason: string | null;
+    subject: { id: string; code: string; name: string };
+  }>;
+  nextAvailability: AvailabilitySlot[];
+}
+
+export interface CatalogSubject {
+  id: string;
+  code: string;
+  name: string;
+  program: { name: string };
+}
+
 export interface SessionUser {
   id: string;
   email: string;

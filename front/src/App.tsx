@@ -3,6 +3,7 @@ import { ApiError, createBookingReview, getMyCompletedBookings, logoutRemote } f
 import { LoginCard } from './components/LoginCard';
 import { ReservasApp } from './reservas/ReservasApp';
 import { SessionCard } from './components/SessionCard';
+import { TutorProfileSettings } from './components/TutorProfileSettings';
 import { toFriendlyError, type FriendlyError } from './errors';
 import { clearSession, loadSession } from './session';
 import type { Booking, CreateReviewPayload, SessionUser } from './types';
@@ -24,6 +25,7 @@ export default function App() {
   const [view, setView] = useState<'ratings' | 'reservas'>('ratings');
 
   const isStudent = user?.role === 'STUDENT';
+  const isTutor = user?.role === 'TUTOR';
 
   useEffect(() => {
     if (!toast) return;
@@ -171,7 +173,9 @@ export default function App() {
         </div>
       </header>
 
-      {isStudent && view === 'reservas' ? (
+      {isTutor ? (
+        <TutorProfileSettings />
+      ) : isStudent && view === 'reservas' ? (
         <main className="dashboard">
           <ReservasApp />
         </main>

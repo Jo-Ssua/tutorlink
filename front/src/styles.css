@@ -509,6 +509,18 @@ textarea:focus {
   color: var(--danger);
 }
 
+.alert--success {
+  background: var(--accent-soft);
+  border: 1px solid #b5e8df;
+  color: #08796d;
+}
+
+.alert--info {
+  background: var(--primary-soft);
+  border: 1px solid #d4cafa;
+  color: var(--primary-dark);
+}
+
 .alert .button {
   margin-top: 0.7rem;
 }
@@ -666,6 +678,126 @@ textarea:focus {
   border-radius: var(--radius-lg);
   background: var(--surface);
   box-shadow: var(--shadow-sm);
+}
+
+.tutor-settings {
+  max-width: 920px;
+}
+
+.tutor-settings__panel {
+  display: grid;
+  gap: 1.2rem;
+}
+
+.tutor-settings__panel h2 {
+  font-size: 1.25rem;
+}
+
+.tutor-settings__badge {
+  justify-self: start;
+  padding: 0.55rem 0.9rem;
+  border-radius: 999px;
+  background: var(--warning-soft);
+  color: var(--warning);
+  font-size: 0.85rem;
+  font-weight: 800;
+}
+
+.tutor-settings__badge.is-verified {
+  background: var(--accent-soft);
+  color: #08796d;
+}
+
+.tutor-settings__form {
+  display: grid;
+  gap: 1rem;
+}
+
+.tutor-settings__form > label,
+.tutor-settings__evidence {
+  display: grid;
+  gap: 0.45rem;
+  color: var(--ink);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.tutor-settings__form input:not([type='checkbox']),
+.tutor-settings__form textarea,
+.tutor-settings__form select,
+.tutor-settings__evidence input {
+  width: 100%;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: #fff;
+  color: var(--ink);
+}
+
+.tutor-settings__form fieldset {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 0.8rem 1rem;
+}
+
+.tutor-settings__checks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem 1.2rem;
+  margin-top: 0.5rem;
+}
+
+.tutor-settings__checks label {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-weight: 600;
+}
+
+.tutor-settings__subjects,
+.tutor-settings__catalog,
+.tutor-settings__slots {
+  display: grid;
+  gap: 0.65rem;
+  list-style: none;
+  padding: 0;
+}
+
+.tutor-settings__subjects li,
+.tutor-settings__catalog li,
+.tutor-settings__slots li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.8rem 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.tutor-settings__subjects li > div,
+.tutor-settings__catalog li > span,
+.tutor-settings__slots li > span {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.tutor-settings__subjects small,
+.tutor-settings__catalog small,
+.tutor-settings__slots small {
+  color: var(--muted);
+}
+
+.tutor-settings__error {
+  color: var(--danger) !important;
+}
+
+.tutor-settings__schedule {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: end;
+}
+
+.tutor-settings__schedule button {
+  align-self: end;
 }
 
 .panel--center {
