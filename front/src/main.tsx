@@ -1,10 +1,13 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App';
-// El tema va primero; `styles.css` es el CSS heredado que aún viste las
-// pantallas sin migrar y se borra al terminar la migración.
-import './theme.css';
+// `styles.css` es el CSS heredado que aún viste las pantallas sin migrar y se
+// borra al terminar la migración. Va primero porque declara en `:root` nombres
+// que HeroUI también usa (`--accent`, `--surface`, `--muted`, `--danger`): el
+// tema tiene que ser el último en hablar para que esos tokens sean los de la
+// marca y no los del CSS que está de salida.
 import './styles.css';
+import './theme.css';
 
 const container = document.getElementById('root');
 if (!container) {
