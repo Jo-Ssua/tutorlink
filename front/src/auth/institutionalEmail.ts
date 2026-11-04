@@ -13,8 +13,8 @@ export const INSTITUTIONAL_DOMAINS = (
   .filter(Boolean);
 
 export function isInstitutionalEmail(email: string): boolean {
-  const domain = email.trim().toLowerCase().split('@')[1];
-  return domain !== undefined && INSTITUTIONAL_DOMAINS.includes(domain);
+  const [local, domain] = email.trim().toLowerCase().split('@');
+  return Boolean(local) && domain !== undefined && INSTITUTIONAL_DOMAINS.includes(domain);
 }
 
 /** Texto para mostrar el formato aceptado, antes y después de enviar. */

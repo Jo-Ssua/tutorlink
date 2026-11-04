@@ -142,10 +142,11 @@ Referencia detallada de todos los endpoints: [README_ENDPOINTS.md](./README_ENDP
 | --- | --- | --- |
 | POST | `/api/v1/auth/register` | Registro con correo institucional |
 | POST | `/api/v1/auth/verify-email` | Verificacion con codigo de 6 digitos |
+| GET | `/api/v1/auth/verify-email` | Verificacion desde el enlace del correo |
 | POST | `/api/v1/auth/resend-verification` | Reenvio de codigo |
 | POST | `/api/v1/auth/login` | Login con access y refresh token |
 | POST | `/api/v1/auth/refresh` | Rotacion de tokens |
-| POST | `/api/v1/auth/logout` | Cierre de sesion |
+| POST | `/api/v1/auth/logout` | Cierre de sesion e invalidacion de los access tokens |
 | GET | `/api/v1/auth/me` | Usuario autenticado |
 
 ### Catalogo
@@ -293,7 +294,14 @@ El estudiante tiene 10 minutos para confirmar una propuesta aceptada. Solo puede
 | `JWT_REFRESH_EXPIRES_IN` | Vigencia del refresh token |
 | `EMAIL_CODE_SECRET` | Secreto para codigos de verificacion |
 | `ANONYMITY_SALT` | Sal para alias anonimos de estudiantes |
+| `APP_URL` | URL publica del frontend; base de los enlaces que viajan por correo |
 | `INSTITUTIONAL_EMAIL_DOMAINS` | Dominios permitidos para registro |
+| `INSTITUTIONAL_DOMAIN_FACULTIES` | Opcional. Facultades habilitadas por dominio (`dominio:FAC1|FAC2;otro:FAC3`) |
+| `MAIL_TRANSPORT` | `console` escribe el correo en el log; `smtp` lo envia de verdad |
+| `MAIL_FROM` | Remitente; obligatorio con `smtp` |
+| `MAIL_VERIFICATION_PATH` | Ruta del frontend que verifica la cuenta, por defecto `/verificar` |
+| `MAIL_LOGIN_PATH` | Ruta del frontend para iniciar sesion, por defecto `/login` |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS` | Servidor SMTP; `SMTP_HOST` es obligatorio con `smtp` |
 | `CORS_ORIGINS` | Origenes permitidos, separados por coma |
 | `PLATFORM_FEE_PERCENT` | Porcentaje de comision |
 | `CANCELLATION_WINDOW_HOURS` | Ventana de cancelacion del estudiante |
@@ -336,9 +344,9 @@ npm run test:e2e
 node scripts/smoke-test.mjs
 ```
 
-- `npm test` ejecuta las pruebas unitarias de `src/`.
-- `npm run test:e2e` requiere PostgreSQL disponible y migraciones aplicadas.
-- `scripts/smoke-test.mjs` requiere la API en `http://localhost:3000/api/v1` y datos seed. Se puede cambiar con `API_URL`.
+- `npm test` ejecuta las pruebas unitarias de `src/`, incluido `auth.service.spec.ts`, que cubre registro, verificacion, bloqueo por intentos fallidos y cierre de sesion sin tocar la base de datos.
+- `npm run test:e2e` requiere `.env`, PostgreSQL disponible y migraciones aplicadas. `test/auth.e2e-spec.ts` recorre registro, verificacion, login y logout de punta a punta; enciende `EXPOSE_DEV_CODES` por su cuenta para leer el codigo de la respuesta.
+- `scripts/smoke-test.mjs` requiere la API en `http://localhost:3000/api/v1` y datos seed. Se puede cambiar con `API_URL`. Su bloque de autenticacion crea una cuenta nueva en cada corrida; la mitad de verificacion se salta si `EXPOSE_DEV_CODES` no esta encendido.
 - El smoke test crea solicitudes, reservas y pagos; ejecutar `docker compose down -v && docker compose up -d --build` o `npx prisma migrate reset --force` para volver al estado limpio.
 - El login tiene limite de 10 solicitudes por minuto; si se repite el smoke test inmediatamente puede devolver `429 RATE_LIMITED`.
 
@@ -388,7 +396,9 @@ docs/
 
 ## Notas
 
-- No se envian correos reales. Los codigos de verificacion se devuelven en la respuesta solo si `EXPOSE_DEV_CODES=true` y `NODE_ENV` no es `production`.
+- El correo de verificacion se envia de verdad con `MAIL_TRANSPORT=smtp`. Con `console` (por defecto) se escribe en el log, y `docker compose --profile mail up -d` levanta Mailpit en `http://localhost:8025` para verlo en un buzon.
+- Los codigos de verificacion se devuelven en la respuesta solo si `EXPOSE_DEV_CODES=true` y `NODE_ENV` no es `production`.
+- Cerrar sesion incrementa `tokenVersion`, que viaja en el claim `tv`: los access tokens emitidos antes dejan de valer de inmediato. El primer despliegue con esta columna obliga a iniciar sesion de nuevo una vez.
 - Los tutores ven alias anonimos de estudiantes; las resenas publicas no exponen identidad.
 - El seed es idempotente mediante `upsert`, pero no elimina datos creados por pruebas. Para un estado limpio usar `prisma migrate reset` o `docker compose down -v`.
 - Swagger permite autenticarse con el boton `Authorize` usando el access token.
