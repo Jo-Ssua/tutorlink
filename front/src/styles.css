@@ -21,8 +21,7 @@
   --radius-sm: 10px;
   --radius-md: 16px;
   --radius-lg: 24px;
-  font-family:
-    'Avenir Next', 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: var(--font-sans);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
