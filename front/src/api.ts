@@ -7,8 +7,12 @@ import type {
   CreateReviewPayload,
   CreateReviewResult,
   LoginResult,
+  Program,
+  RegisterPayload,
   SessionUser,
   TutorApplicationList,
+  VerificationPending,
+  VerifyEmailResult,
 } from './types';
 
 const API_URL = (import.meta.env.VITE_API_URL ?? 'http://localhost:3000/api/v1').replace(
@@ -134,7 +138,14 @@ async function refreshSession(): Promise<boolean> {
 }
 
 /** Rutas públicas: un 401 suyo es un error de credenciales, no una sesión caída. */
-const PUBLIC_PATHS = ['/auth/login', '/auth/register', '/auth/verify-email', '/auth/refresh'];
+const PUBLIC_PATHS = [
+  '/auth/login',
+  '/auth/register',
+  '/auth/verify-email',
+  '/auth/resend-verification',
+  '/auth/refresh',
+  '/catalog',
+];
 
 export async function request<T>(
   path: string,
@@ -191,6 +202,48 @@ export async function logoutRemote(): Promise<void> {
   } finally {
     clearSession();
   }
+}
+
+export async function register(payload: RegisterPayload): Promise<VerificationPending> {
+  const body: RegisterPayload = {
+    fullName: payload.fullName.trim(),
+    email: payload.email.trim().toLowerCase(),
+    password: payload.password,
+  };
+  // El backend valida con `forbidNonWhitelisted`, así que los opcionales vacíos
+  // no se envían.
+  if (payload.studentCode?.trim()) body.studentCode = payload.studentCode.trim();
+  if (payload.programId) body.programId = payload.programId;
+  if (payload.semester) body.semester = payload.semester;
+
+  return request<VerificationPending>(
+    '/auth/register',
+    { method: 'POST', body: JSON.stringify(body) },
+    false,
+  );
+}
+
+export async function verifyEmail(email: string, code: string): Promise<VerifyEmailResult> {
+  return request<VerifyEmailResult>(
+    '/auth/verify-email',
+    {
+      method: 'POST',
+      body: JSON.stringify({ email: email.trim().toLowerCase(), code: code.trim() }),
+    },
+    false,
+  );
+}
+
+export async function resendVerification(email: string): Promise<VerificationPending> {
+  return request<VerificationPending>(
+    '/auth/resend-verification',
+    { method: 'POST', body: JSON.stringify({ email: email.trim().toLowerCase() }) },
+    false,
+  );
+}
+
+export async function getPrograms(): Promise<Program[]> {
+  return request<Program[]>('/catalog/programs');
 }
 
 /** Confirma contra la API que la sesión guardada sigue siendo válida. */

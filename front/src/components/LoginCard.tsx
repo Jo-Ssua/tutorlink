@@ -1,25 +1,31 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { API_URL } from '../api';
 import { useAuth } from '../auth/AuthContext';
+import { acceptedEmailFormat } from '../auth/institutionalEmail';
 import { toFriendlyError, type FriendlyError } from '../errors';
+import { AuthShell } from './AuthShell';
 
-const DEMO_USERS = [
-  {
-    label: 'María · sesiones ya calificadas',
-    email: 'estudiante@universidad.edu.co',
-  },
+interface LoginCardProps {
+  /** Aviso que llega de otra pantalla, por ejemplo al verificar la cuenta. */
+  notice?: string;
+}
+
+/** Correos del seed, para no escribirlos a mano en desarrollo. */
+const DEMO_EMAILS = [
+  { label: 'María · sesiones ya calificadas', email: 'estudiante@universidad.edu.co' },
   {
     label: 'Juan · sesiones por calificar',
     email: 'juan.estudiante@estudiantes.universidad.edu.co',
   },
+  { label: 'Ana · tutora', email: 'ana.tutor@universidad.edu.co' },
+  { label: 'Administrador', email: 'admin@universidad.edu.co' },
 ];
 
-const DEMO_PASSWORD = 'TutorLink123*';
-
-export function LoginCard() {
+export function LoginCard({ notice }: LoginCardProps) {
   const { signIn, expired, dismissExpired } = useAuth();
-  const [email, setEmail] = useState(DEMO_USERS[1].email);
-  const [password, setPassword] = useState(DEMO_PASSWORD);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<FriendlyError | null>(null);
 
@@ -38,109 +44,116 @@ export function LoginCard() {
   }
 
   return (
-    <main className="auth">
-      <section className="auth__intro">
-        <span className="brand brand--light">TutorLink</span>
-        <h1>Tu opinión ayuda a otros estudiantes a elegir mejor.</h1>
-        <p>
-          Califica de 1 a 5 estrellas a tu tutor después de una sesión completada y deja
-          una reseña verificada.
-        </p>
-        <ul className="auth__points">
-          <li>Solo sesiones completadas pueden calificarse.</li>
-          <li>Una reseña por sesión, sin duplicados.</li>
-          <li>El promedio del tutor se actualiza al enviar.</li>
-        </ul>
-      </section>
+    <AuthShell
+      title="Tutorías con tus compañeros de universidad."
+      lead="Reserva una sesión, paga de forma simulada y califica al tutor cuando termine."
+      points={[
+        'Tutores verificados con su correo institucional.',
+        'Horarios reales, siempre actualizados.',
+        'Reseñas de estudiantes que ya tomaron la sesión.',
+      ]}
+    >
+      <p className="eyebrow">Acceso</p>
+      <h2>Inicia sesión</h2>
+      <p className="muted">Entra con tu correo institucional.</p>
 
-      <section className="auth__panel">
-        <div className="auth__card">
-          <p className="eyebrow">Acceso de estudiante</p>
-          <h2>Inicia sesión para calificar</h2>
-          <p className="muted">Usa las credenciales demo del seed o tu cuenta institucional.</p>
-
-          {expired && (
-            <div className="alert alert--error" role="status">
-              <p>Tu sesión se cerró. Inicia sesión otra vez para continuar.</p>
-              <button
-                type="button"
-                className="button button--ghost button--small"
-                onClick={dismissExpired}
-              >
-                Entendido
-              </button>
-            </div>
-          )}
-
-          <div className="demo-users" aria-label="Cuentas demo">
-            {DEMO_USERS.map((user) => (
-              <button
-                key={user.email}
-                type="button"
-                className={`demo-user${email === user.email ? ' demo-user--active' : ''}`}
-                onClick={() => {
-                  setEmail(user.email);
-                  setPassword(DEMO_PASSWORD);
-                  setError(null);
-                }}
-              >
-                {user.label}
-              </button>
-            ))}
-          </div>
-
-          <form onSubmit={handleSubmit} className="auth__form" noValidate>
-            <div className="field">
-              <label className="field__label" htmlFor="login-email">
-                Correo institucional
-              </label>
-              <input
-                id="login-email"
-                type="email"
-                autoComplete="username"
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                required
-              />
-            </div>
-
-            <div className="field">
-              <label className="field__label" htmlFor="login-password">
-                Contraseña
-              </label>
-              <input
-                id="login-password"
-                type="password"
-                autoComplete="current-password"
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                required
-              />
-            </div>
-
-            {error && (
-              <div className="alert alert--error" role="alert">
-                <p>{error.message}</p>
-                {error.details.length > 0 && (
-                  <ul>
-                    {error.details.map((detail) => (
-                      <li key={detail}>{detail}</li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            )}
-
-            <button type="submit" className="button button--primary button--wide" disabled={loading}>
-              {loading ? 'Ingresando...' : 'Ingresar'}
-            </button>
-          </form>
-
-          <p className="auth__api">
-            API: <code>{API_URL}</code>
-          </p>
+      {notice && (
+        <div className="alert alert--success" role="status">
+          <p>{notice}</p>
         </div>
-      </section>
-    </main>
+      )}
+
+      {expired && (
+        <div className="alert alert--error" role="status">
+          <p>Tu sesión se cerró. Inicia sesión otra vez para continuar.</p>
+          <button
+            type="button"
+            className="button button--ghost button--small"
+            onClick={dismissExpired}
+          >
+            Entendido
+          </button>
+        </div>
+      )}
+
+      {/* Atajo solo para desarrollo: rellena el correo, nunca la contraseña. */}
+      {import.meta.env.DEV && (
+        <div className="demo-users" aria-label="Cuentas de prueba">
+          {DEMO_EMAILS.map((demo) => (
+            <button
+              key={demo.email}
+              type="button"
+              className={`demo-user${email === demo.email ? ' demo-user--active' : ''}`}
+              onClick={() => {
+                setEmail(demo.email);
+                setError(null);
+              }}
+            >
+              {demo.label}
+            </button>
+          ))}
+          <p className="field__hint">La contraseña de estas cuentas está en el README.</p>
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit} className="auth__form" noValidate>
+        <div className="field">
+          <label className="field__label" htmlFor="login-email">
+            Correo institucional
+          </label>
+          <input
+            id="login-email"
+            type="email"
+            autoComplete="username"
+            placeholder={`nombre${acceptedEmailFormat().split(' o ')[0]}`}
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            required
+          />
+        </div>
+
+        <div className="field">
+          <label className="field__label" htmlFor="login-password">
+            Contraseña
+          </label>
+          <input
+            id="login-password"
+            type="password"
+            autoComplete="current-password"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            required
+          />
+        </div>
+
+        {error && (
+          <div className="alert alert--error" role="alert">
+            <p>{error.message}</p>
+            {error.details.length > 0 && (
+              <ul>
+                {error.details.map((detail) => (
+                  <li key={detail}>{detail}</li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
+
+        <button type="submit" className="button button--primary button--wide" disabled={loading}>
+          {loading ? 'Ingresando...' : 'Ingresar'}
+        </button>
+      </form>
+
+      <p className="auth__footer">
+        ¿No tienes cuenta? <Link to="/registro">Regístrate con tu correo institucional</Link>
+      </p>
+      <p className="auth__footer">
+        ¿No recibiste el código? <Link to="/verificar">Verifica tu cuenta</Link>
+      </p>
+
+      <p className="auth__api">
+        API: <code>{API_URL}</code>
+      </p>
+    </AuthShell>
   );
 }

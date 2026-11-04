@@ -10,7 +10,7 @@ import {
   withStoredSession,
 } from '../test/renderApp';
 
-const LOGIN_HEADING = /Inicia sesión para calificar/;
+const LOGIN_HEADING = 'Inicia sesión';
 const RATINGS_HEADING = /Califica tus tutorías completadas/;
 
 beforeEach(() => {
@@ -114,7 +114,11 @@ describe('ciclo de vida de la sesion', () => {
     renderApp('/login');
     await userEvent.click(await screen.findByRole('button', { name: 'Ingresar' }));
 
-    expect(await screen.findByRole('alert')).toHaveTextContent(/Credenciales invalidas/);
+    // `errors.ts` reemplaza el mensaje del backend por uno uniforme: el usuario no
+    // debe saber si falló el correo o la contraseña.
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      /Correo o contraseña incorrectos/,
+    );
     expect(window.localStorage.getItem(SESSION_KEY)).toBeNull();
   });
 });

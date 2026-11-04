@@ -175,3 +175,37 @@ export interface TutorApplicationList {
   items: TutorApplication[];
   pagination: PaginationMeta;
 }
+
+export interface Program {
+  id: string;
+  name: string;
+  code: string;
+  faculty: { id: string; name: string; code: string };
+}
+
+export interface RegisterPayload {
+  fullName: string;
+  email: string;
+  password: string;
+  studentCode?: string;
+  programId?: string;
+  semester?: number;
+}
+
+/**
+ * Respuesta de /auth/register y /auth/resend-verification. Es la misma exista o
+ * no una cuenta con ese correo: la API no revela si el correo esta registrado.
+ */
+export interface VerificationPending {
+  email: string;
+  verificationRequired: true;
+  verificationExpiresAt: string;
+  /** Solo en desarrollo, con EXPOSE_DEV_CODES=true. */
+  devVerificationCode?: string;
+  message: string;
+}
+
+export interface VerifyEmailResult {
+  verified: true;
+  user: { id: string; email: string; role: Role; status: string };
+}

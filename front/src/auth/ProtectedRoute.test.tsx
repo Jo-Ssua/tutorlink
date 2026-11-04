@@ -29,7 +29,7 @@ describe('rutas protegidas', () => {
     stubApi({});
     renderApp('/app/calificaciones');
 
-    expect(await screen.findByRole('heading', { name: /Inicia sesión para calificar/ })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Inicia sesión' })).toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: /Califica tus tutorías/ })).not.toBeInTheDocument();
   });
 
@@ -61,7 +61,7 @@ describe('rutas protegidas', () => {
     renderApp('/app/calificaciones');
 
     expect(
-      await screen.findByRole('heading', { name: /Inicia sesión para calificar/ }),
+      await screen.findByRole('heading', { name: 'Inicia sesión' }),
     ).toBeInTheDocument();
     expect(window.localStorage.length).toBe(0);
   });

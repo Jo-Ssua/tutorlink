@@ -56,6 +56,7 @@ p {
 
 button,
 input,
+select,
 textarea {
   font: inherit;
 }
@@ -94,6 +95,7 @@ button {
 .button:focus-visible,
 .star--button:focus-visible,
 input:focus-visible,
+select:focus-visible,
 textarea:focus-visible,
 .demo-user:focus-visible {
   outline: 3px solid rgba(91, 61, 245, 0.35);
@@ -354,6 +356,7 @@ textarea:focus-visible,
 }
 
 input,
+select,
 textarea {
   width: 100%;
   padding: 0.75rem 0.9rem;
@@ -373,11 +376,13 @@ textarea {
 }
 
 input:hover,
+select:hover,
 textarea:hover {
   border-color: #cfc6ee;
 }
 
 input:focus,
+select:focus,
 textarea:focus {
   border-color: var(--primary);
   box-shadow: 0 0 0 4px rgba(91, 61, 245, 0.12);
@@ -1088,5 +1093,132 @@ textarea:focus {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+}
+
+/* Registro y verificación */
+
+.auth__card--wide {
+  width: min(100%, 560px);
+}
+
+.auth__footer {
+  margin-top: 1rem;
+  font-size: 0.86rem;
+  color: var(--ink-soft);
+}
+
+.auth__footer a {
+  font-weight: 700;
+}
+
+.auth__card > .button--ghost {
+  margin-top: 0.8rem;
+}
+
+.field__error {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--danger);
+}
+
+.field__optional {
+  font-weight: 500;
+  color: var(--muted);
+}
+
+/* Dos campos cortos en una fila; apilados en móvil. */
+.field-row {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: 1fr 1fr;
+}
+
+input[aria-invalid='true'] {
+  border-color: #f7c8c3;
+}
+
+.strength {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--surface-soft);
+  overflow: hidden;
+}
+
+.strength__bar {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  transition:
+    width 160ms ease,
+    background-color 160ms ease;
+}
+
+.strength__bar--0 {
+  width: 0;
+}
+
+.strength__bar--1 {
+  width: 25%;
+  background: var(--danger);
+}
+
+.strength__bar--2 {
+  width: 50%;
+  background: var(--warning);
+}
+
+.strength__bar--3 {
+  width: 75%;
+  background: var(--star);
+}
+
+.strength__bar--4 {
+  width: 100%;
+  background: var(--accent);
+}
+
+.rules {
+  display: grid;
+  gap: 0.2rem;
+  padding: 0;
+  list-style: none;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.rules__item--met {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.code-input {
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: 0.5em;
+  text-align: center;
+}
+
+.alert--success {
+  background: var(--accent-soft);
+  border: 1px solid #b9e6df;
+  color: #0b7568;
+}
+
+.alert--info {
+  background: var(--primary-soft);
+  border: 1px solid #cfc6ee;
+  color: var(--primary-dark);
+}
+
+.alert--info code {
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+}
+
+@media (max-width: 640px) {
+  .field-row {
+    grid-template-columns: 1fr;
   }
 }

@@ -8,9 +8,10 @@ import { AppLayout } from './layouts/AppLayout';
 import { ReservasApp } from './reservas/ReservasApp';
 import { AdminHome } from './screens/AdminHome';
 import { LoginScreen } from './screens/LoginScreen';
-import { PendingFeatureScreen } from './screens/PendingFeatureScreen';
 import { RatingsScreen } from './screens/RatingsScreen';
+import { RegisterScreen } from './screens/RegisterScreen';
 import { TutorHome } from './screens/TutorHome';
+import { VerifyScreen } from './screens/VerifyScreen';
 
 export function AppRoutes() {
   return (
@@ -18,24 +19,9 @@ export function AppRoutes() {
       <Route path="/" element={<RoleHomeRedirect />} />
       <Route path="/login" element={<LoginScreen />} />
 
-      <Route
-        path="/registro"
-        element={
-          <PendingFeatureScreen
-            title="Registro con correo institucional"
-            description="El formulario de registro llega en la siguiente iteración. Por ahora la cuenta se crea con POST /auth/register."
-          />
-        }
-      />
-      <Route
-        path="/verificar"
-        element={
-          <PendingFeatureScreen
-            title="Verificación de la cuenta"
-            description="Aquí llegará el formulario del código de 6 dígitos. Mientras tanto, el enlace del correo también funciona contra GET /auth/verify-email."
-          />
-        }
-      />
+      {/* Registro y verificación son públicos: el enlace del correo cae aquí. */}
+      <Route path="/registro" element={<RegisterScreen />} />
+      <Route path="/verificar" element={<VerifyScreen />} />
 
       {/* Todo lo que hay debajo exige sesión. */}
       <Route element={<ProtectedRoute />}>
