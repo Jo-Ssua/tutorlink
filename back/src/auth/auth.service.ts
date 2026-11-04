@@ -3,8 +3,6 @@ import {
   BadRequestException,
   ConflictException,
   ForbiddenException,
-  HttpException,
-  HttpStatus,
   Injectable,
   NotFoundException,
   UnauthorizedException,
@@ -14,6 +12,7 @@ import { JwtService, JwtSignOptions } from '@nestjs/jwt';
 import { Role, UserStatus } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 import { randomUUID } from 'crypto';
+import { MailService } from '../mail/mail.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { addMinutes } from '../common/utils/date';
 import { money } from '../common/utils/money';
@@ -24,6 +23,13 @@ import {
   ResendVerificationDto,
   VerifyEmailDto,
 } from './dto/auth.dto';
+
+/** Vigencia del codigo de verificacion de correo. */
+const VERIFICATION_TTL_MINUTES = 15;
+/** Espera minima entre dos envios de codigo al mismo correo. */
+const RESEND_COOLDOWN_MS = 60_000;
+/** Intentos fallidos de codigo antes de invalidarlo y exigir uno nuevo. */
+const MAX_VERIFICATION_ATTEMPTS = 5;
 
 interface TokenPayload {
   sub: string;
@@ -39,35 +45,34 @@ export class AuthService {
     private readonly prisma: PrismaService,
     private readonly jwt: JwtService,
     private readonly config: ConfigService,
+    private readonly mail: MailService,
   ) {}
 
   async register(dto: RegisterDto) {
     this.assertInstitutionalEmail(dto.email);
+    await this.assertProgramIsAllowed(dto.email, dto.programId);
 
     const existing = await this.prisma.user.findUnique({
       where: { email: dto.email },
-      select: { id: true, status: true },
+      select: {
+        id: true,
+        email: true,
+        fullName: true,
+        status: true,
+        verificationSentAt: true,
+        emailVerificationExpiresAt: true,
+      },
     });
 
+    // Un correo ya registrado responde exactamente igual que uno nuevo: la API
+    // no revela si la cuenta existe. Solo el dueno del buzon se entera, por el
+    // correo que recibe.
     if (existing) {
-      throw new ConflictException({
-        code: 'EMAIL_ALREADY_REGISTERED',
-        message: 'Ya existe una cuenta con el correo institucional indicado',
-      });
-    }
-
-    if (dto.programId) {
-      const program = await this.prisma.program.findUnique({ where: { id: dto.programId } });
-      if (!program) {
-        throw new NotFoundException({
-          code: 'PROGRAM_NOT_FOUND',
-          message: 'El programa academico indicado no existe',
-        });
-      }
+      return this.continueVerification(existing);
     }
 
     const verificationCode = this.generateVerificationCode();
-    const verificationExpiresAt = addMinutes(new Date(), 15);
+    const verificationExpiresAt = addMinutes(new Date(), VERIFICATION_TTL_MINUTES);
     const passwordHash = await bcrypt.hash(dto.password, 12);
 
     const user = await this.prisma.user.create({
@@ -88,17 +93,17 @@ export class AuthService {
           },
         },
       },
-      select: { id: true, email: true, fullName: true, role: true, status: true },
+      select: { email: true, fullName: true },
     });
 
-    return {
-      user,
-      verificationRequired: true,
-      verificationExpiresAt,
-      ...(this.canExposeDevCodes() ? { devVerificationCode: verificationCode } : {}),
-      message:
-        'Cuenta creada. Confirma el codigo enviado al correo institucional para activarla.',
-    };
+    void this.mail.sendEmailVerification({
+      to: user.email,
+      fullName: user.fullName,
+      code: verificationCode,
+      expiresAt: verificationExpiresAt,
+    });
+
+    return this.verificationPendingResponse(dto.email, verificationExpiresAt, verificationCode);
   }
 
   async verifyEmail(dto: VerifyEmailDto) {
@@ -110,6 +115,7 @@ export class AuthService {
         status: true,
         emailVerificationCodeHash: true,
         emailVerificationExpiresAt: true,
+        emailVerificationAttempts: true,
       },
     });
 
@@ -127,6 +133,11 @@ export class AuthService {
       });
     }
 
+    if (user.emailVerificationAttempts >= MAX_VERIFICATION_ATTEMPTS) {
+      await this.invalidateVerificationCode(user.id);
+      throw this.attemptsExceeded();
+    }
+
     if (!user.emailVerificationExpiresAt || user.emailVerificationExpiresAt < new Date()) {
       throw new BadRequestException({
         code: 'VERIFICATION_CODE_EXPIRED',
@@ -136,9 +147,28 @@ export class AuthService {
 
     const expected = this.hashVerificationCode(dto.email, dto.code);
     if (!this.safeEqual(expected, user.emailVerificationCodeHash)) {
+      const attempts = user.emailVerificationAttempts + 1;
+      const exhausted = attempts >= MAX_VERIFICATION_ATTEMPTS;
+
+      await this.prisma.user.update({
+        where: { id: user.id },
+        data: {
+          emailVerificationAttempts: attempts,
+          // Al agotar los intentos el codigo deja de servir: hay que pedir otro.
+          ...(exhausted
+            ? { emailVerificationCodeHash: null, emailVerificationExpiresAt: null }
+            : {}),
+        },
+      });
+
+      if (exhausted) {
+        throw this.attemptsExceeded();
+      }
+
       throw new BadRequestException({
         code: 'INVALID_VERIFICATION_CODE',
         message: 'El codigo de verificacion no es valido',
+        details: [`Intentos restantes: ${MAX_VERIFICATION_ATTEMPTS - attempts}`],
       });
     }
 
@@ -149,6 +179,7 @@ export class AuthService {
         emailVerifiedAt: new Date(),
         emailVerificationCodeHash: null,
         emailVerificationExpiresAt: null,
+        emailVerificationAttempts: 0,
       },
       select: { id: true, email: true, role: true, status: true },
     });
@@ -168,51 +199,25 @@ export class AuthService {
   async resendVerification(dto: ResendVerificationDto) {
     const user = await this.prisma.user.findUnique({
       where: { email: dto.email },
-      select: { id: true, status: true, verificationSentAt: true },
-    });
-
-    if (!user) {
-      return {
-        sent: true,
-        message: 'Si el correo esta registrado, recibiras un nuevo codigo de verificacion.',
-      };
-    }
-
-    if (user.status === UserStatus.ACTIVE) {
-      throw new ConflictException({
-        code: 'EMAIL_ALREADY_VERIFIED',
-        message: 'La cuenta ya se encuentra verificada',
-      });
-    }
-
-    if (user.verificationSentAt && Date.now() - user.verificationSentAt.getTime() < 60_000) {
-      throw new HttpException(
-        {
-          code: 'VERIFICATION_COOLDOWN',
-          message: 'Espera al menos 60 segundos antes de solicitar otro codigo',
-        },
-        HttpStatus.TOO_MANY_REQUESTS,
-      );
-    }
-
-    const code = this.generateVerificationCode();
-    const expiresAt = addMinutes(new Date(), 15);
-
-    await this.prisma.user.update({
-      where: { id: user.id },
-      data: {
-        emailVerificationCodeHash: this.hashVerificationCode(dto.email, code),
-        emailVerificationExpiresAt: expiresAt,
-        verificationSentAt: new Date(),
+      select: {
+        id: true,
+        email: true,
+        fullName: true,
+        status: true,
+        verificationSentAt: true,
+        emailVerificationExpiresAt: true,
       },
     });
 
-    return {
-      sent: true,
-      verificationExpiresAt: expiresAt,
-      ...(this.canExposeDevCodes() ? { devVerificationCode: code } : {}),
-      message: 'Se genero un nuevo codigo de verificacion.',
-    };
+    // Igual que en el registro: la respuesta no cambia si el correo no existe.
+    if (!user) {
+      return this.verificationPendingResponse(
+        dto.email,
+        addMinutes(new Date(), VERIFICATION_TTL_MINUTES),
+      );
+    }
+
+    return this.continueVerification(user);
   }
 
   async login(dto: LoginDto) {
@@ -390,6 +395,142 @@ export class AuthService {
       expiresIn: accessExpiresIn,
       refreshExpiresIn,
     };
+  }
+
+  /**
+   * Avanza la verificacion de una cuenta que ya existe y devuelve siempre la
+   * misma respuesta, sin importar en que estado este:
+   *
+   * - PENDING_VERIFICATION: emite un codigo nuevo, salvo que el anterior se
+   *   haya enviado hace menos de 60 segundos.
+   * - ACTIVE: no emite codigo y avisa por correo que la cuenta ya existe.
+   * - SUSPENDED: no emite codigo y no envia correo.
+   *
+   * La contrasena y el nombre de una cuenta sin verificar NO se sobreescriben:
+   * de lo contrario cualquiera podria pisar el registro pendiente de otra
+   * persona con solo conocer su correo.
+   */
+  private async continueVerification(user: {
+    id: string;
+    email: string;
+    fullName: string;
+    status: UserStatus;
+    verificationSentAt: Date | null;
+    emailVerificationExpiresAt: Date | null;
+  }) {
+    const now = new Date();
+    const fallbackExpiresAt = addMinutes(now, VERIFICATION_TTL_MINUTES);
+
+    if (user.status !== UserStatus.PENDING_VERIFICATION) {
+      if (user.status === UserStatus.ACTIVE) {
+        void this.mail.sendAccountExistsNotice({ to: user.email, fullName: user.fullName });
+      }
+
+      return this.verificationPendingResponse(user.email, fallbackExpiresAt);
+    }
+
+    const onCooldown =
+      user.verificationSentAt !== null &&
+      now.getTime() - user.verificationSentAt.getTime() < RESEND_COOLDOWN_MS;
+
+    if (onCooldown) {
+      return this.verificationPendingResponse(
+        user.email,
+        user.emailVerificationExpiresAt ?? fallbackExpiresAt,
+      );
+    }
+
+    const code = this.generateVerificationCode();
+    const expiresAt = addMinutes(now, VERIFICATION_TTL_MINUTES);
+
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        emailVerificationCodeHash: this.hashVerificationCode(user.email, code),
+        emailVerificationExpiresAt: expiresAt,
+        emailVerificationAttempts: 0,
+        verificationSentAt: now,
+      },
+    });
+
+    void this.mail.sendEmailVerification({
+      to: user.email,
+      fullName: user.fullName,
+      code,
+      expiresAt,
+    });
+
+    return this.verificationPendingResponse(user.email, expiresAt, code);
+  }
+
+  /**
+   * Respuesta unica de /auth/register y /auth/resend-verification. No incluye
+   * datos de la cuenta: es identica para un correo nuevo y para uno ya
+   * registrado. `devVerificationCode` solo aparece fuera de produccion y con
+   * EXPOSE_DEV_CODES=true.
+   */
+  private verificationPendingResponse(email: string, expiresAt: Date, code?: string) {
+    return {
+      email,
+      verificationRequired: true,
+      verificationExpiresAt: expiresAt,
+      ...(code && this.canExposeDevCodes() ? { devVerificationCode: code } : {}),
+      message: 'Revisa tu correo institucional para continuar con la activacion de tu cuenta.',
+    };
+  }
+
+  private async invalidateVerificationCode(userId: string): Promise<void> {
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { emailVerificationCodeHash: null, emailVerificationExpiresAt: null },
+    });
+  }
+
+  private attemptsExceeded(): BadRequestException {
+    return new BadRequestException({
+      code: 'VERIFICATION_ATTEMPTS_EXCEEDED',
+      message: `Superaste los ${MAX_VERIFICATION_ATTEMPTS} intentos permitidos. Solicita un codigo nuevo.`,
+    });
+  }
+
+  /**
+   * Comprueba que el programa exista y, si el dominio institucional tiene
+   * facultades configuradas en INSTITUTIONAL_DOMAIN_FACULTIES, que el programa
+   * pertenezca a una de ellas. Sin configuracion no hay restriccion: el modelo
+   * de datos no guarda a que universidad pertenece cada facultad.
+   */
+  private async assertProgramIsAllowed(email: string, programId?: string): Promise<void> {
+    if (!programId) {
+      return;
+    }
+
+    const program = await this.prisma.program.findUnique({
+      where: { id: programId },
+      select: { id: true, faculty: { select: { code: true } } },
+    });
+
+    if (!program) {
+      throw new NotFoundException({
+        code: 'PROGRAM_NOT_FOUND',
+        message: 'El programa academico indicado no existe',
+      });
+    }
+
+    const scopes =
+      this.config.get<Record<string, string[]>>('institutionalDomainFaculties') ?? {};
+    const domain = email.split('@')[1]?.toLowerCase() ?? '';
+    const allowedFaculties = scopes[domain];
+
+    if (!allowedFaculties || allowedFaculties.length === 0) {
+      return;
+    }
+
+    if (!allowedFaculties.includes(program.faculty.code.toUpperCase())) {
+      throw new BadRequestException({
+        code: 'PROGRAM_NOT_IN_DOMAIN_SCOPE',
+        message: `El programa indicado no pertenece a las facultades habilitadas para ${domain}: ${allowedFaculties.join(', ')}`,
+      });
+    }
   }
 
   private assertInstitutionalEmail(email: string): void {
