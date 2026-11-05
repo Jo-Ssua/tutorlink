@@ -142,6 +142,47 @@ ul {
   gap: 10px;
 }
 
+.tutor-search {
+  gap: 12px;
+}
+
+.tutor-search .r-field {
+  flex: 1;
+}
+
+.tutor-search input[type='number'] {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+}
+
+.tutor-search__row {
+  display: flex;
+  gap: 10px;
+}
+
+.tutor-search__actions {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+}
+
+.tutor-search__actions .btn {
+  padding: 12px;
+  font-size: 14px;
+}
+
+.tutor-search__actions .link-btn {
+  align-self: center;
+}
+
+.tutor-sort {
+  margin: 2px 0;
+}
+
 .tutor-card {
   width: 100%;
   flex-direction: row;
