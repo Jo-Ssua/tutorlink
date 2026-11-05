@@ -11,6 +11,8 @@ interface AccessTokenPayload {
   email: string;
   role: Role;
   type: 'access' | 'refresh';
+  /** Version de sesion con la que se firmo el token. */
+  tv: number;
 }
 
 @Injectable()
@@ -42,6 +44,7 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
         fullName: true,
         role: true,
         status: true,
+        tokenVersion: true,
       },
     });
 
@@ -52,6 +55,17 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
       });
     }
 
-    return user;
+    // Al cerrar sesion la cuenta sube de version: los tokens firmados con la
+    // anterior dejan de servir aunque todavia no hayan expirado.
+    if (payload.tv !== user.tokenVersion) {
+      throw new UnauthorizedException({
+        code: 'TOKEN_REVOKED',
+        message: 'La sesion se cerro. Inicia sesion nuevamente.',
+      });
+    }
+
+    const { tokenVersion: _tokenVersion, ...authenticated } = user;
+
+    return authenticated;
   }
 }

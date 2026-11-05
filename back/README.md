@@ -8,13 +8,30 @@ El proyecto implementa las historias de usuario de `HUs.csv` con NestJS, Postgre
 
 - NestJS 11 + TypeScript
 - PostgreSQL 16
-- Prisma ORM 6
+- Prisma ORM 7 (driver adapter `@prisma/adapter-pg`)
 - JWT access/refresh con Passport
 - class-validator / class-transformer
 - Swagger / OpenAPI
 - Jest + Supertest
 - Docker + Docker Compose
 - ESLint + Prettier
+
+### Dependencias fijadas por seguridad
+
+`package.json` declara un bloque `overrides` que sube dos dependencias
+transitivas que NestJS 11 fija de forma exacta y que tenian avisos de
+seguridad abiertos:
+
+| Paquete | Lo fija | Version exacta | Se sube a |
+| --- | --- | --- | --- |
+| `multer` | `@nestjs/platform-express` 11 | 2.4.0 | 2.5.0 |
+| `js-yaml` | `@nestjs/swagger` 11 | 5.3.0 | 5.4.3 o superior |
+
+Con esos dos overrides `npm audit --omit=dev` queda en cero avisos sin tocar
+NestJS. Los overrides se pueden quitar cuando el proyecto pase a NestJS 12,
+que ya trae las versiones corregidas; esa migracion exige Node 24.9 o
+superior, porque NestJS 12 se publica solo como ESM y Jest no lo puede cargar
+en versiones anteriores de Node.
 
 ## Arquitectura
 
@@ -66,7 +83,7 @@ Los errores usan:
 
 ## Requisitos
 
-- Node.js 24 o superior
+- Node.js 24 o superior (Prisma 7 exige 20.19+, 22.12+ o 24+)
 - npm 11 o superior
 - Docker y Docker Compose (recomendado)
 - PostgreSQL 16 si se ejecuta sin Docker
@@ -142,10 +159,11 @@ Referencia detallada de todos los endpoints: [README_ENDPOINTS.md](./README_ENDP
 | --- | --- | --- |
 | POST | `/api/v1/auth/register` | Registro con correo institucional |
 | POST | `/api/v1/auth/verify-email` | Verificacion con codigo de 6 digitos |
+| GET | `/api/v1/auth/verify-email` | Verificacion desde el enlace del correo |
 | POST | `/api/v1/auth/resend-verification` | Reenvio de codigo |
 | POST | `/api/v1/auth/login` | Login con access y refresh token |
 | POST | `/api/v1/auth/refresh` | Rotacion de tokens |
-| POST | `/api/v1/auth/logout` | Cierre de sesion |
+| POST | `/api/v1/auth/logout` | Cierre de sesion e invalidacion de los access tokens |
 | GET | `/api/v1/auth/me` | Usuario autenticado |
 
 ### Catalogo
@@ -293,7 +311,14 @@ El estudiante tiene 10 minutos para confirmar una propuesta aceptada. Solo puede
 | `JWT_REFRESH_EXPIRES_IN` | Vigencia del refresh token |
 | `EMAIL_CODE_SECRET` | Secreto para codigos de verificacion |
 | `ANONYMITY_SALT` | Sal para alias anonimos de estudiantes |
+| `APP_URL` | URL publica del frontend; base de los enlaces que viajan por correo |
 | `INSTITUTIONAL_EMAIL_DOMAINS` | Dominios permitidos para registro |
+| `INSTITUTIONAL_DOMAIN_FACULTIES` | Opcional. Facultades habilitadas por dominio (`dominio:FAC1|FAC2;otro:FAC3`) |
+| `MAIL_TRANSPORT` | `console` escribe el correo en el log; `smtp` lo envia de verdad |
+| `MAIL_FROM` | Remitente; obligatorio con `smtp` |
+| `MAIL_VERIFICATION_PATH` | Ruta del frontend que verifica la cuenta, por defecto `/verificar` |
+| `MAIL_LOGIN_PATH` | Ruta del frontend para iniciar sesion, por defecto `/login` |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS` | Servidor SMTP; `SMTP_HOST` es obligatorio con `smtp` |
 | `CORS_ORIGINS` | Origenes permitidos, separados por coma |
 | `PLATFORM_FEE_PERCENT` | Porcentaje de comision |
 | `CANCELLATION_WINDOW_HOURS` | Ventana de cancelacion del estudiante |
@@ -321,7 +346,7 @@ Ver `.env.example` para los valores completos.
 | `npm run test:e2e` | Pruebas e2e con Supertest |
 | `npm run test:cov` | Cobertura |
 | `npm run prisma:generate` | Genera Prisma Client |
-| `npm run prisma:migrate` | Crea/aplica migracion en desarrollo |
+| `npm run prisma:migrate` | Crea/aplica migracion en desarrollo; en Prisma 7 ya no genera el cliente ni ejecuta el seed |
 | `npm run prisma:deploy` | Aplica migraciones |
 | `npm run prisma:seed` | Ejecuta seed demo |
 | `npm run openapi:export` | Genera `docs/openapi.json` |
@@ -336,9 +361,9 @@ npm run test:e2e
 node scripts/smoke-test.mjs
 ```
 
-- `npm test` ejecuta las pruebas unitarias de `src/`.
-- `npm run test:e2e` requiere PostgreSQL disponible y migraciones aplicadas.
-- `scripts/smoke-test.mjs` requiere la API en `http://localhost:3000/api/v1` y datos seed. Se puede cambiar con `API_URL`.
+- `npm test` ejecuta las pruebas unitarias de `src/`, incluido `auth.service.spec.ts`, que cubre registro, verificacion, bloqueo por intentos fallidos y cierre de sesion sin tocar la base de datos.
+- `npm run test:e2e` requiere `.env`, PostgreSQL disponible y migraciones aplicadas. `test/auth.e2e-spec.ts` recorre registro, verificacion, login y logout de punta a punta; enciende `EXPOSE_DEV_CODES` por su cuenta para leer el codigo de la respuesta.
+- `scripts/smoke-test.mjs` requiere la API en `http://localhost:3000/api/v1` y datos seed. Se puede cambiar con `API_URL`. Su bloque de autenticacion crea una cuenta nueva en cada corrida; la mitad de verificacion se salta si `EXPOSE_DEV_CODES` no esta encendido.
 - El smoke test crea solicitudes, reservas y pagos; ejecutar `docker compose down -v && docker compose up -d --build` o `npx prisma migrate reset --force` para volver al estado limpio.
 - El login tiene limite de 10 solicitudes por minuto; si se repite el smoke test inmediatamente puede devolver `429 RATE_LIMITED`.
 
@@ -360,6 +385,7 @@ src/
   app.module.ts     Modulo raiz
   bootstrap.ts      Configuracion global y Swagger
   main.ts           Punto de entrada
+prisma.config.ts    Configuracion de la CLI de Prisma (esquema, migraciones, seed, datasource)
 prisma/
   migrations/       Migraciones SQL
   schema.prisma     Modelo de datos
@@ -388,12 +414,18 @@ docs/
 
 ## Notas
 
-- No se envian correos reales. Los codigos de verificacion se devuelven en la respuesta solo si `EXPOSE_DEV_CODES=true` y `NODE_ENV` no es `production`.
+- El correo de verificacion se envia de verdad con `MAIL_TRANSPORT=smtp`. Con `console` (por defecto) se escribe en el log, y `docker compose --profile mail up -d` levanta Mailpit en `http://localhost:8025` para verlo en un buzon.
+- Los codigos de verificacion se devuelven en la respuesta solo si `EXPOSE_DEV_CODES=true` y `NODE_ENV` no es `production`.
+- Cerrar sesion incrementa `tokenVersion`, que viaja en el claim `tv`: los access tokens emitidos antes dejan de valer de inmediato. El primer despliegue con esta columna obliga a iniciar sesion de nuevo una vez.
 - Los tutores ven alias anonimos de estudiantes; las resenas publicas no exponen identidad.
 - El seed es idempotente mediante `upsert`, pero no elimina datos creados por pruebas. Para un estado limpio usar `prisma migrate reset` o `docker compose down -v`.
 - Swagger permite autenticarse con el boton `Authorize` usando el access token.
 - `docs/openapi.json` se regenera con `npm run openapi:export` y actualmente documenta 59 rutas.
-- Prisma muestra un aviso de deprecacion por `package.json#prisma`; es compatible con Prisma 6 y puede migrarse a `prisma.config.ts` en una version futura.
+- La configuracion de la CLI de Prisma vive en `prisma.config.ts` (esquema, carpeta de migraciones, comando de seed y `DATABASE_URL`). El bloque `package.json#prisma` ya no existe y Prisma 7 no imprime ningun aviso de deprecacion.
+- Prisma 7 no carga `.env` por su cuenta: `prisma.config.ts` hace `import 'dotenv/config'`. La URL se lee con `process.env.DATABASE_URL ?? ''` para que `prisma generate` siga funcionando sin base de datos configurada.
+- `datasource db` ya no declara `url`; en Prisma 7 esa propiedad solo se acepta en `prisma.config.ts`.
+- Prisma 7 exige un driver adapter: `PrismaService` y el seed construyen el cliente con `new PrismaPg({ connectionString: ... })` de `@prisma/adapter-pg`.
+- El generador sigue en `prisma-client-js`, que Prisma 7 acepta pero marca para retirar en versiones futuras; migrarlo a `prisma-client` con `output` propio implica cambiar los imports de `@prisma/client` en todo el backend.
 
 ## Licencia
 
