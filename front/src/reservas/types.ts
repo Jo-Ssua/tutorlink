@@ -54,6 +54,34 @@ export interface TutorList {
   pagination: Pagination;
 }
 
+export interface FacultyOption {
+  id: string;
+  name: string;
+  code: string;
+}
+
+export interface ProgramOption {
+  id: string;
+  name: string;
+  code: string;
+  facultyId: string;
+}
+
+export interface SubjectOption {
+  id: string;
+  name: string;
+  code: string;
+  programId: string;
+  program: { name: string; facultyId: string };
+}
+
+export interface ProfessorOption {
+  id: string;
+  fullName: string;
+  programId: string;
+  program: { facultyId: string };
+}
+
 export interface TutorSubjectDetail extends SubjectRef {
   program: string;
   faculty: string;
