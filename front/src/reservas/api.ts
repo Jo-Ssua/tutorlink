@@ -5,7 +5,11 @@ import type {
   AvailabilitySlot,
   CreateBookingPayload,
   CreatedBooking,
+  FacultyOption,
+  ProfessorOption,
+  ProgramOption,
   QuoteResult,
+  SubjectOption,
   TutorList,
   TutorProfile,
 } from './types';
@@ -75,8 +79,35 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   return (body as ApiSuccess<T>).data;
 }
 
-export function listTutors(): Promise<TutorList> {
-  return request<TutorList>('/tutors?limit=50&sortBy=RATING');
+export interface TutorSearchFilters {
+  facultyId?: string;
+  programId?: string;
+  subjectId?: string;
+  professorId?: string;
+}
+
+export function listTutors(filters: TutorSearchFilters = {}): Promise<TutorList> {
+  const params = new URLSearchParams({ limit: '50', sortBy: 'RATING' });
+  for (const [key, value] of Object.entries(filters)) {
+    if (value) params.set(key, value);
+  }
+  return request<TutorList>(`/tutors?${params.toString()}`);
+}
+
+export function listFaculties(): Promise<FacultyOption[]> {
+  return request<FacultyOption[]>('/catalog/faculties');
+}
+
+export function listPrograms(): Promise<ProgramOption[]> {
+  return request<ProgramOption[]>('/catalog/programs');
+}
+
+export function listSubjects(): Promise<SubjectOption[]> {
+  return request<SubjectOption[]>('/catalog/subjects');
+}
+
+export function listProfessors(): Promise<ProfessorOption[]> {
+  return request<ProfessorOption[]>('/catalog/professors');
 }
 
 export function getTutor(tutorProfileId: string): Promise<TutorProfile> {

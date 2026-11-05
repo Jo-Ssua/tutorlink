@@ -119,6 +119,17 @@ ul {
   line-height: 1.45;
 }
 
+.search-filters {
+  gap: 12px;
+}
+
+.search-filters .r-field {
+  gap: 5px;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 600;
+}
+
 .r-muted {
   color: var(--muted);
   font-size: 13px;
