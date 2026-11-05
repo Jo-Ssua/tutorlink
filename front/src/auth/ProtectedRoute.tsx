@@ -59,10 +59,10 @@ export function RoleHomeRedirect() {
 
 export function SessionCheck() {
   return (
-    <main className="dashboard">
-      <section className="panel panel--center" aria-busy="true">
-        <p className="muted">Verificando tu sesión...</p>
-      </section>
+    <main className="grid min-h-dvh place-items-center bg-background px-4">
+      <p className="text-sm text-muted" aria-busy="true">
+        Verificando tu sesión...
+      </p>
     </main>
   );
 }

@@ -30,14 +30,7 @@ export function AppRoutes() {
 
           <Route element={<RoleRoute roles={['STUDENT']} />}>
             <Route path="calificaciones" element={<RatingsScreen />} />
-            <Route
-              path="reservar"
-              element={
-                <main className="dashboard">
-                  <ReservasApp />
-                </main>
-              }
-            />
+            <Route path="reservar" element={<ReservasApp />} />
           </Route>
 
           <Route element={<RoleRoute roles={['TUTOR']} />}>

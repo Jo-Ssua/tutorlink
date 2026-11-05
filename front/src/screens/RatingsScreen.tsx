@@ -1,29 +1,15 @@
 import { Alert, Button, Card, Chip } from '@heroui/react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ApiError, createBookingReview, getMyCompletedBookings } from '../api';
+import { LoadError } from '../components/LoadError';
 import { SessionCard } from '../components/SessionCard';
+import { StatTile } from '../components/StatTile';
 import { toFriendlyError, type FriendlyError } from '../errors';
 import type { Booking, CreateReviewPayload } from '../types';
 
 interface ToastState {
   tone: 'success' | 'error';
   message: string;
-}
-
-/** Una cifra del resumen; en móvil las tres caben en una fila. */
-function Stat({ value, label, accent = false }: { value: number; label: string; accent?: boolean }) {
-  return (
-    <div className="flex flex-col items-center gap-1 rounded-xl border border-border bg-surface p-3 text-center sm:items-start sm:p-4 sm:text-left">
-      <span
-        className={`text-2xl font-bold tabular-nums sm:text-3xl ${
-          accent ? 'text-accent' : 'text-foreground'
-        }`}
-      >
-        {value}
-      </span>
-      <span className="text-xs text-muted sm:text-sm">{label}</span>
-    </div>
-  );
 }
 
 /**
@@ -143,32 +129,13 @@ export function RatingsScreen() {
           className="grid grid-cols-3 gap-2 sm:gap-3 lg:w-auto lg:shrink-0"
           aria-label="Resumen de sesiones"
         >
-          <Stat value={pending.length} label="Por calificar" accent />
-          <Stat value={reviewed.length} label="Calificadas" />
-          <Stat value={bookings.length} label="Completadas" />
+          <StatTile value={pending.length} label="Por calificar" accent />
+          <StatTile value={reviewed.length} label="Calificadas" />
+          <StatTile value={bookings.length} label="Completadas" />
         </div>
       </section>
 
-      {listError && (
-        <Alert status="danger">
-          <Alert.Indicator />
-          <Alert.Content>
-            <Alert.Title>{listError.message}</Alert.Title>
-            {listError.details.length > 0 && (
-              <Alert.Description>
-                <ul className="mt-1 list-inside list-disc space-y-1">
-                  {listError.details.map((detail) => (
-                    <li key={detail}>{detail}</li>
-                  ))}
-                </ul>
-              </Alert.Description>
-            )}
-          </Alert.Content>
-          <Button size="sm" variant="tertiary" onPress={() => void loadBookings(1, false)}>
-            Reintentar
-          </Button>
-        </Alert>
-      )}
+      {listError && <LoadError error={listError} onRetry={() => void loadBookings(1, false)} />}
 
       {loading && (
         <div className="flex flex-col gap-4" aria-live="polite" aria-busy="true">

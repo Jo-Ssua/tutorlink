@@ -1,6 +1,9 @@
+import { Card, Chip } from '@heroui/react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ApiError, getTutorBookings } from '../api';
 import { useAuth } from '../auth/AuthContext';
+import { LoadError } from '../components/LoadError';
+import { StatTile } from '../components/StatTile';
 import { toFriendlyError, type FriendlyError } from '../errors';
 import type { Booking, BookingStatus } from '../types';
 
@@ -23,6 +26,25 @@ const STATUS_LABEL: Record<BookingStatus, string> = {
   REJECTED: 'Rechazada',
   CANCELLED: 'Cancelada',
 };
+
+const STATUS_COLOR: Record<BookingStatus, 'default' | 'warning' | 'success' | 'danger'> = {
+  PENDING: 'warning',
+  ACCEPTED: 'warning',
+  CONFIRMED: 'success',
+  COMPLETED: 'success',
+  REJECTED: 'danger',
+  CANCELLED: 'default',
+};
+
+/** Un dato de la ficha: etiqueta arriba, valor abajo. */
+function Meta({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="flex flex-col gap-0.5">
+      <dt className="text-xs font-semibold tracking-wide text-muted uppercase">{label}</dt>
+      <dd className="text-sm text-foreground">{children}</dd>
+    </div>
+  );
+}
 
 /**
  * Pantalla inicial del tutor. Antes el rol TUTOR se quedaba sin destino tras
@@ -73,111 +95,101 @@ export function TutorHome() {
   }, [bookings]);
 
   return (
-    <main className="dashboard">
-      <section className="hero">
-        <div>
-          <p className="eyebrow">Panel del tutor</p>
-          <h1>Hola, {user?.fullName.split(/\s+/)[0]}</h1>
-          <p className="hero__text">
-            Estas son las reservas que han hecho sobre tus horarios. El nombre del estudiante
-            llega anonimizado hasta que la sesión se confirma.
+    <main className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-6 sm:px-6 sm:py-8">
+      <section className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+        <div className="flex flex-col gap-2">
+          <h1 className="text-2xl font-bold text-balance text-foreground sm:text-3xl">
+            Hola, {user?.fullName.split(/\s+/)[0]}
+          </h1>
+          <p className="max-w-2xl text-sm text-muted sm:text-base">
+            Estas son las reservas que han hecho sobre tus horarios. El nombre del estudiante llega
+            anonimizado hasta que la sesión se confirma.
           </p>
         </div>
-        <div className="stats" aria-label="Resumen de reservas">
-          <div className="stat stat--pending">
-            <span className="stat__value">{counts.pending}</span>
-            <span className="stat__label">Por responder</span>
-          </div>
-          <div className="stat">
-            <span className="stat__value">{counts.upcoming}</span>
-            <span className="stat__label">Próximas</span>
-          </div>
-          <div className="stat">
-            <span className="stat__value">{counts.completed}</span>
-            <span className="stat__label">Completadas</span>
-          </div>
+        <div
+          className="grid grid-cols-3 gap-2 sm:gap-3 lg:w-auto lg:shrink-0"
+          aria-label="Resumen de reservas"
+        >
+          <StatTile value={counts.pending} label="Por responder" accent />
+          <StatTile value={counts.upcoming} label="Próximas" />
+          <StatTile value={counts.completed} label="Completadas" />
         </div>
       </section>
 
-      {error && (
-        <div className="alert alert--error" role="alert">
-          <p>{error.message}</p>
-          <button
-            type="button"
-            className="button button--ghost button--small"
-            onClick={() => void load()}
-          >
-            Reintentar
-          </button>
-        </div>
-      )}
+      {error && <LoadError error={error} onRetry={() => void load()} />}
 
       {loading && (
-        <div className="skeleton-list" aria-live="polite" aria-busy="true">
+        <div className="flex flex-col gap-4" aria-live="polite" aria-busy="true">
           <span className="sr-only">Cargando reservas...</span>
-          <div className="skeleton" />
-          <div className="skeleton" />
+          <div className="h-32 animate-pulse rounded-xl bg-default" />
+          <div className="h-32 animate-pulse rounded-xl bg-default" />
         </div>
       )}
 
       {!loading && !error && bookings.length === 0 && (
-        <section className="panel panel--center">
-          <h2>Todavía no tienes reservas</h2>
-          <p>
-            Cuando alguien reserve uno de tus horarios aparecerá aquí. Publica tu
-            disponibilidad desde <code>POST /tutor/availability</code> mientras la pantalla de
-            agenda esté en construcción.
-          </p>
-        </section>
+        <Card>
+          <Card.Content className="flex flex-col items-center gap-2 py-10 text-center">
+            <h2 className="text-lg font-bold text-foreground">Todavía no tienes reservas</h2>
+            <p className="max-w-md text-sm text-muted">
+              Cuando alguien reserve uno de tus horarios aparecerá aquí. Publica tu disponibilidad
+              desde <code>POST /tutor/availability</code> mientras la pantalla de agenda esté en
+              construcción.
+            </p>
+          </Card.Content>
+        </Card>
       )}
 
       {!loading && bookings.length > 0 && (
-        <section className="section" aria-labelledby="tutor-bookings-title">
-          <div className="section__heading">
-            <h2 id="tutor-bookings-title">Reservas recibidas</h2>
-            <span className="count">{bookings.length}</span>
+        <section className="flex flex-col gap-4" aria-labelledby="tutor-bookings-title">
+          <div className="flex items-center gap-2">
+            <h2 id="tutor-bookings-title" className="text-lg font-bold text-foreground">
+              Reservas recibidas
+            </h2>
+            <Chip size="sm" variant="soft">
+              {bookings.length}
+            </Chip>
           </div>
 
-          <div className="session-list">
+          <div className="flex flex-col gap-4">
             {bookings.map((booking) => (
-              <article key={booking.id} className="session-card">
-                <header className="session-card__header">
-                  <div>
-                    <p className="session-card__eyebrow">
+              <Card key={booking.id}>
+                <Card.Header className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="flex flex-col gap-1">
+                    <p className="text-xs font-semibold tracking-wide text-muted uppercase">
                       {booking.subject.code} · {booking.subject.name}
                     </p>
-                    <h3 className="session-card__topic">{booking.topic}</h3>
+                    <Card.Title>{booking.topic}</Card.Title>
                   </div>
-                  <span className={`pill ${pillClass(booking.status)}`}>
+                  <Chip
+                    className="self-start"
+                    size="sm"
+                    variant="soft"
+                    color={STATUS_COLOR[booking.status]}
+                  >
                     {STATUS_LABEL[booking.status]}
-                  </span>
-                </header>
+                  </Chip>
+                </Card.Header>
 
-                <dl className="session-meta">
-                  <div>
-                    <dt>Cuándo</dt>
-                    <dd>{dateTimeFormatter.format(new Date(booking.startAt))}</dd>
-                  </div>
-                  <div>
-                    <dt>Estudiante</dt>
-                    <dd>{booking.student?.alias ?? 'Anónimo'}</dd>
-                  </div>
-                  <div>
-                    <dt>Tus ingresos</dt>
-                    <dd>{copFormatter.format(booking.price.subtotal - booking.price.platformFee)}</dd>
-                  </div>
-                </dl>
-              </article>
+                <Card.Content>
+                  <dl className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+                    <Meta label="Cuándo">
+                      <time dateTime={booking.startAt}>
+                        {dateTimeFormatter.format(new Date(booking.startAt))}
+                      </time>
+                    </Meta>
+                    <Meta label="Estudiante">{booking.student?.alias ?? 'Anónimo'}</Meta>
+                    <Meta label="Tus ingresos">
+                      <span className="tabular-nums">
+                        {copFormatter.format(booking.price.subtotal - booking.price.platformFee)}
+                      </span>
+                    </Meta>
+                  </dl>
+                </Card.Content>
+              </Card>
             ))}
           </div>
         </section>
       )}
     </main>
   );
-}
-
-function pillClass(status: BookingStatus): string {
-  if (status === 'PENDING' || status === 'ACCEPTED') return 'pill--pending';
-  if (status === 'COMPLETED' || status === 'CONFIRMED') return 'pill--done';
-  return '';
 }
