@@ -451,6 +451,7 @@ export class TutorsService {
     slotId: string,
     dto: UpdateAvailabilityDto,
   ) {
+    await this.requireVerifiedProfile(user.id);
     const slot = await this.requireOwnedSlot(user.id, slotId);
     await this.assertSlotHasNoHistory(slot.id);
 
@@ -490,6 +491,7 @@ export class TutorsService {
   }
 
   async deleteAvailability(user: AuthenticatedUser, slotId: string) {
+    await this.requireVerifiedProfile(user.id);
     const slot = await this.requireOwnedSlot(user.id, slotId);
     const [bookingCount, proposalCount] = await this.prisma.$transaction([
       this.prisma.booking.count({ where: { slotId: slot.id } }),

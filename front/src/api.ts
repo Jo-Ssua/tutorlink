@@ -5,8 +5,12 @@ import type {
   BookingList,
   CreateReviewPayload,
   CreateReviewResult,
+  CatalogSubject,
   LoginResult,
+  Modality,
+  TutorOwnProfile,
 } from './types';
+import type { AvailabilitySlot } from './reservas/types';
 
 const API_URL = (import.meta.env.VITE_API_URL ?? 'http://localhost:3000/api/v1').replace(
   /\/$/,
@@ -171,6 +175,49 @@ export async function createBookingReview(
     method: 'POST',
     body: JSON.stringify(body),
   });
+}
+
+export async function getTutorOwnProfile(): Promise<TutorOwnProfile> {
+  return request<TutorOwnProfile>('/tutor/profile');
+}
+
+export async function updateTutorOwnProfile(payload: {
+  bio: string;
+  hourlyRate: number;
+  modalities: Modality[];
+}): Promise<TutorOwnProfile> {
+  return request<TutorOwnProfile>('/tutor/profile', { method: 'PATCH', body: JSON.stringify(payload) });
+}
+
+export async function listCatalogSubjects(search: string): Promise<CatalogSubject[]> {
+  const query = new URLSearchParams();
+  if (search.trim()) query.set('search', search.trim());
+  const suffix = query.toString();
+  return request<CatalogSubject[]>(`/catalog/subjects${suffix ? `?${suffix}` : ''}`);
+}
+
+export async function addTutorSubject(subjectId: string, evidenceUrl?: string): Promise<void> {
+  await request('/tutor/subjects', { method: 'POST', body: JSON.stringify({ subjectId, ...(evidenceUrl?.trim() ? { evidenceUrl: evidenceUrl.trim() } : {}) }) });
+}
+
+export async function removeTutorSubject(tutorSubjectId: string): Promise<void> {
+  await request(`/tutor/subjects/${tutorSubjectId}`, { method: 'DELETE' });
+}
+
+export async function listTutorAvailability(): Promise<AvailabilitySlot[]> {
+  return request<AvailabilitySlot[]>('/tutor/availability');
+}
+
+export async function createTutorAvailability(payload: { startAt: string; endAt: string; modality: Modality }): Promise<AvailabilitySlot> {
+  return request<AvailabilitySlot>('/tutor/availability', { method: 'POST', body: JSON.stringify(payload) });
+}
+
+export async function updateTutorAvailability(id: string, payload: { startAt: string; endAt: string; modality: Modality }): Promise<AvailabilitySlot> {
+  return request<AvailabilitySlot>(`/tutor/availability/${id}`, { method: 'PATCH', body: JSON.stringify(payload) });
+}
+
+export async function deleteTutorAvailability(id: string): Promise<void> {
+  await request(`/tutor/availability/${id}`, { method: 'DELETE' });
 }
 
 export { API_URL };
