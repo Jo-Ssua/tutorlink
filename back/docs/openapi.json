@@ -103,6 +103,7 @@
     },
     "/api/v1/auth/register": {
       "post": {
+        "description": "Responde siempre lo mismo, exista o no una cuenta con ese correo, para no permitir enumerar usuarios. El codigo de verificacion viaja por correo.",
         "operationId": "AuthController_register",
         "parameters": [],
         "requestBody": {
@@ -116,7 +117,7 @@
           }
         },
         "responses": {
-          "201": {
+          "202": {
             "description": ""
           }
         },
@@ -146,6 +147,39 @@
           }
         },
         "summary": "Verificar el correo institucional con el codigo de 6 digitos",
+        "tags": [
+          "Auth"
+        ]
+      },
+      "get": {
+        "description": "Misma validacion que el POST, con los datos en la query string.",
+        "operationId": "AuthController_verifyEmailByLink",
+        "parameters": [
+          {
+            "name": "email",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "example": "ana.torres@universidad.edu.co",
+              "type": "string"
+            }
+          },
+          {
+            "name": "code",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "example": "123456",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Verificar el correo institucional desde el enlace del correo",
         "tags": [
           "Auth"
         ]
@@ -1046,6 +1080,7 @@
     },
     "/api/v1/tutors/{id}/availability": {
       "get": {
+        "description": "Devuelve unicamente franjas futuras en estado AVAILABLE. Una franja reservada, retenida o bloqueada deja de aparecer; los cambios de agenda del tutor se reflejan de inmediato (sin cache).",
         "operationId": "TutorsController_availability",
         "parameters": [
           {
@@ -2455,7 +2490,7 @@
           },
           "slotId": {
             "type": "string",
-            "description": "ID de la franja disponible"
+            "description": "ID de la franja disponible (fecha y hora)"
           }
         },
         "required": [
@@ -2472,7 +2507,7 @@
           },
           "slotId": {
             "type": "string",
-            "description": "ID de la franja disponible"
+            "description": "ID de la franja disponible (fecha y hora)"
           },
           "subjectId": {
             "type": "string",
@@ -2481,6 +2516,15 @@
           "topic": {
             "type": "string",
             "example": "Preparacion para el parcial de estructuras de datos"
+          },
+          "modality": {
+            "type": "string",
+            "enum": [
+              "VIRTUAL",
+              "IN_PERSON"
+            ],
+            "example": "VIRTUAL",
+            "description": "Modalidad elegida por el estudiante. Debe ser compatible con la franja: si la franja es HYBRID puede ser VIRTUAL o IN_PERSON."
           },
           "description": {
             "type": "string",
@@ -2491,7 +2535,8 @@
           "tutorProfileId",
           "slotId",
           "subjectId",
-          "topic"
+          "topic",
+          "modality"
         ]
       },
       "RejectBookingDto": {

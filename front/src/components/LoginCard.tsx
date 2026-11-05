@@ -1,28 +1,21 @@
+import { Button, Input, Label, TextField } from '@heroui/react';
 import { useState } from 'react';
-import { login, API_URL } from '../api';
+import { Link } from 'react-router-dom';
+import { useAuth } from '../auth/AuthContext';
+import { acceptedEmailFormat } from '../auth/institutionalEmail';
 import { toFriendlyError, type FriendlyError } from '../errors';
-import type { SessionUser } from '../types';
+import { AuthShell } from './AuthShell';
+import { FormError, FormNotice } from './FormFeedback';
 
 interface LoginCardProps {
-  onLoggedIn: (user: SessionUser) => void;
+  /** Aviso que llega de otra pantalla, por ejemplo al verificar la cuenta. */
+  notice?: string;
 }
 
-const DEMO_USERS = [
-  {
-    label: 'María · sesiones ya calificadas',
-    email: 'estudiante@universidad.edu.co',
-  },
-  {
-    label: 'Juan · sesiones por calificar',
-    email: 'juan.estudiante@estudiantes.universidad.edu.co',
-  },
-];
-
-const DEMO_PASSWORD = 'TutorLink123*';
-
-export function LoginCard({ onLoggedIn }: LoginCardProps) {
-  const [email, setEmail] = useState(DEMO_USERS[1].email);
-  const [password, setPassword] = useState(DEMO_PASSWORD);
+export function LoginCard({ notice }: LoginCardProps) {
+  const { signIn, expired, dismissExpired } = useAuth();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<FriendlyError | null>(null);
 
@@ -31,8 +24,8 @@ export function LoginCard({ onLoggedIn }: LoginCardProps) {
     setError(null);
     setLoading(true);
     try {
-      const result = await login(email.trim(), password);
-      onLoggedIn(result.user);
+      // El AuthProvider se encarga del estado y de llevarnos a la pantalla del rol.
+      await signIn(email.trim(), password);
     } catch (loginError) {
       setError(toFriendlyError(loginError));
     } finally {
@@ -41,96 +34,78 @@ export function LoginCard({ onLoggedIn }: LoginCardProps) {
   }
 
   return (
-    <main className="auth">
-      <section className="auth__intro">
-        <span className="brand brand--light">TutorLink</span>
-        <h1>Tu opinión ayuda a otros estudiantes a elegir mejor.</h1>
-        <p>
-          Califica de 1 a 5 estrellas a tu tutor después de una sesión completada y deja
-          una reseña verificada.
-        </p>
-        <ul className="auth__points">
-          <li>Solo sesiones completadas pueden calificarse.</li>
-          <li>Una reseña por sesión, sin duplicados.</li>
-          <li>El promedio del tutor se actualiza al enviar.</li>
-        </ul>
-      </section>
+    <AuthShell
+      title="Tutorías con tus compañeros de universidad."
+      lead="Reserva una sesión, paga de forma simulada y califica al tutor cuando termine."
+      points={[
+        'Tutores verificados con su correo institucional.',
+        'Horarios reales, siempre actualizados.',
+        'Reseñas de estudiantes que ya tomaron la sesión.',
+      ]}
+    >
+      <div className="flex flex-col gap-6">
+        <header className="flex flex-col gap-1">
+          <p className="text-xs font-bold tracking-widest text-accent uppercase">Acceso</p>
+          <h2 className="text-2xl font-bold text-foreground">Inicia sesión</h2>
+          <p className="text-muted">Entra con tu correo institucional.</p>
+        </header>
 
-      <section className="auth__panel">
-        <div className="auth__card">
-          <p className="eyebrow">Acceso de estudiante</p>
-          <h2>Inicia sesión para calificar</h2>
-          <p className="muted">Usa las credenciales demo del seed o tu cuenta institucional.</p>
+        {notice && <FormNotice>{notice}</FormNotice>}
 
-          <div className="demo-users" aria-label="Cuentas demo">
-            {DEMO_USERS.map((user) => (
-              <button
-                key={user.email}
-                type="button"
-                className={`demo-user${email === user.email ? ' demo-user--active' : ''}`}
-                onClick={() => {
-                  setEmail(user.email);
-                  setPassword(DEMO_PASSWORD);
-                  setError(null);
-                }}
-              >
-                {user.label}
-              </button>
-            ))}
+        {expired && (
+          <div className="flex flex-col items-start gap-3">
+            <FormNotice status="accent">
+              Tu sesión se cerró. Inicia sesión otra vez para continuar.
+            </FormNotice>
+            <Button size="sm" variant="tertiary" onPress={dismissExpired}>
+              Entendido
+            </Button>
           </div>
+        )}
 
-          <form onSubmit={handleSubmit} className="auth__form" noValidate>
-            <div className="field">
-              <label className="field__label" htmlFor="login-email">
-                Correo institucional
-              </label>
-              <input
-                id="login-email"
-                type="email"
-                autoComplete="username"
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                required
-              />
-            </div>
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4" noValidate>
+          <TextField isRequired fullWidth name="email" type="email" value={email} onChange={setEmail}>
+            <Label>Correo institucional</Label>
+            <Input
+              autoComplete="username"
+              placeholder={`nombre${acceptedEmailFormat().split(' o ')[0]}`}
+            />
+          </TextField>
 
-            <div className="field">
-              <label className="field__label" htmlFor="login-password">
-                Contraseña
-              </label>
-              <input
-                id="login-password"
-                type="password"
-                autoComplete="current-password"
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                required
-              />
-            </div>
+          <TextField
+            isRequired
+            fullWidth
+            name="password"
+            type="password"
+            value={password}
+            onChange={setPassword}
+          >
+            <Label>Contraseña</Label>
+            <Input autoComplete="current-password" />
+          </TextField>
 
-            {error && (
-              <div className="alert alert--error" role="alert">
-                <p>{error.message}</p>
-                {error.details.length > 0 && (
-                  <ul>
-                    {error.details.map((detail) => (
-                      <li key={detail}>{detail}</li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            )}
+          <FormError error={error} />
 
-            <button type="submit" className="button button--primary button--wide" disabled={loading}>
-              {loading ? 'Ingresando...' : 'Ingresar'}
-            </button>
-          </form>
+          <Button type="submit" size="lg" className="w-full" isDisabled={loading}>
+            {loading ? 'Ingresando...' : 'Ingresar'}
+          </Button>
+        </form>
 
-          <p className="auth__api">
-            API: <code>{API_URL}</code>
+        <div className="flex flex-col gap-2 text-sm text-muted">
+          <p>
+            ¿No tienes cuenta?{' '}
+            <Link to="/registro" className="font-semibold text-accent underline">
+              Regístrate con tu correo institucional
+            </Link>
+          </p>
+          <p>
+            ¿No recibiste el código?{' '}
+            <Link to="/verificar" className="font-semibold text-accent underline">
+              Verifica tu cuenta
+            </Link>
           </p>
         </div>
-      </section>
-    </main>
+      </div>
+    </AuthShell>
   );
 }

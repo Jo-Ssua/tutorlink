@@ -1,6 +1,9 @@
+import { Button, Card, Chip, Input, Label, ListBox, Select, TextField } from '@heroui/react';
+import { CaretRightIcon, StarIcon } from '@phosphor-icons/react';
 import { useEffect, useState, type FormEvent } from 'react';
-import { ReservasApiError, listTutors } from '../api';
-import { Alert, Avatar, Loading, ScreenHeader } from '../components/ui';
+import { ApiError } from '../../api';
+import { listTutors } from '../api';
+import { Avatar, FlowAlert, Loading, ScreenHeader } from '../components/ui';
 import { formatCop } from '../format';
 import type { Modality, TutorCard, TutorSearchFilters, TutorSortBy } from '../types';
 
@@ -11,25 +14,63 @@ const SORT_OPTIONS: Array<{ value: TutorSortBy; label: string }> = [
   { value: 'AVAILABILITY', label: 'Disponibilidad más cercana' },
 ];
 
-/** Punto de entrada mínimo al flujo de reserva. La búsqueda completa es de SCRUM-11/12/13. */
+/*
+ * React Aria identifica cada opción por su `id` y una cadena vacía no es un
+ * identificador: la opción «sin filtro» necesita un valor propio.
+ */
+const ANY = 'ANY';
+
+const RATING_OPTIONS = [
+  { value: ANY, label: 'Cualquiera' },
+  { value: '3', label: '3 o más' },
+  { value: '4', label: '4 o más' },
+  { value: '4.5', label: '4.5 o más' },
+];
+
+const MODALITY_OPTIONS: Array<{ value: typeof ANY | Modality; label: string }> = [
+  { value: 'ANY', label: 'Todas' },
+  { value: 'VIRTUAL', label: 'Virtual' },
+  { value: 'IN_PERSON', label: 'Presencial' },
+  { value: 'HYBRID', label: 'Híbrida' },
+];
+
+const EMPTY_DRAFT = {
+  q: '',
+  maxRate: '',
+  minRating: ANY as typeof ANY | string,
+  modality: ANY as typeof ANY | Modality,
+};
+
+/** Entrada al flujo de reserva, con la búsqueda y el orden de SCRUM-11/12/13. */
 export function TutorsScreen({ onSelect }: { onSelect: (tutorId: string) => void }) {
   const [tutors, setTutors] = useState<TutorCard[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [filters, setFilters] = useState<TutorSearchFilters>({ sortBy: 'RELEVANCE' });
-  const [draft, setDraft] = useState({ q: '', maxRate: '', minRating: '', modality: '' as '' | Modality });
+  const [filters, setFilters] = useState<TutorSearchFilters>({
+    sortBy: 'RELEVANCE',
+  });
+  const [draft, setDraft] = useState(EMPTY_DRAFT);
 
   useEffect(() => {
     let active = true;
     setLoading(true);
     setError(null);
     listTutors(filters)
-      .then((result) => { if (active) setTutors(result.items); })
-      .catch((caught: unknown) => {
-        if (active) setError(caught instanceof ReservasApiError ? caught.message : 'No se pudieron cargar los tutores.');
+      .then((result) => {
+        if (active) setTutors(result.items);
       })
-      .finally(() => { if (active) setLoading(false); });
-    return () => { active = false; };
+      .catch((caught: unknown) => {
+        if (!active) return;
+        setError(
+          caught instanceof ApiError ? caught.message : 'No se pudieron cargar los tutores.',
+        );
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
   }, [filters]);
 
   function applyFilters(event: FormEvent<HTMLFormElement>) {
@@ -38,83 +79,182 @@ export function TutorsScreen({ onSelect }: { onSelect: (tutorId: string) => void
       ...current,
       q: draft.q.trim() || undefined,
       maxRate: draft.maxRate ? Number(draft.maxRate) : undefined,
-      minRating: draft.minRating ? Number(draft.minRating) : undefined,
-      modality: draft.modality || undefined,
+      minRating: draft.minRating === ANY ? undefined : Number(draft.minRating),
+      modality: draft.modality === ANY ? undefined : draft.modality,
     }));
   }
 
-  function changeSort(sortBy: TutorSortBy) {
-    setFilters((current) => ({ ...current, sortBy }));
-  }
-
   function clearFilters() {
-    setDraft({ q: '', maxRate: '', minRating: '', modality: '' });
+    setDraft(EMPTY_DRAFT);
     setFilters((current) => ({ sortBy: current.sortBy }));
   }
 
+  // Si hay filtros puestos, el vacío significa «nada coincide», no «no hay tutores».
+  const filtered = Boolean(filters.q || filters.maxRate || filters.minRating || filters.modality);
+
   return (
     <>
-      <ScreenHeader title="Tutores disponibles" />
-      <p className="lead">Elige un tutor para reservar tu sesión.</p>
+      <ScreenHeader title="Tutores disponibles" lead="Elige un tutor para reservar tu sesión." />
 
-      <form className="tutor-search card" onSubmit={applyFilters}>
-        <label className="r-field">
-          <span>Materia o tutor</span>
-          <input type="text" value={draft.q} onChange={(event) => setDraft({ ...draft, q: event.target.value })} placeholder="Ej. cálculo, Laura…" />
-        </label>
-        <div className="tutor-search__row">
-          <label className="r-field">
-            <span>Tarifa máxima (COP/h)</span>
-            <input type="number" min="0" value={draft.maxRate} onChange={(event) => setDraft({ ...draft, maxRate: event.target.value })} placeholder="Sin límite" />
-          </label>
-          <label className="r-field">
-            <span>Calificación mínima</span>
-            <select value={draft.minRating} onChange={(event) => setDraft({ ...draft, minRating: event.target.value })}>
-              <option value="">Cualquiera</option><option value="3">3 o más</option><option value="4">4 o más</option><option value="4.5">4.5 o más</option>
-            </select>
-          </label>
-        </div>
-        <label className="r-field">
-          <span>Modalidad</span>
-          <select value={draft.modality} onChange={(event) => setDraft({ ...draft, modality: event.target.value as '' | Modality })}>
-            <option value="">Todas</option><option value="VIRTUAL">Virtual</option><option value="IN_PERSON">Presencial</option><option value="HYBRID">Híbrida</option>
-          </select>
-        </label>
-        <div className="tutor-search__actions">
-          <button type="submit" className="btn btn--primary">Aplicar filtros</button>
-          <button type="button" className="link-btn" onClick={clearFilters}>Limpiar filtros</button>
-        </div>
-      </form>
+      <Card>
+        <Card.Content>
+          <form className="flex flex-col gap-4" onSubmit={applyFilters}>
+            <TextField
+              fullWidth
+              value={draft.q}
+              onChange={(value) => setDraft({ ...draft, q: value })}
+            >
+              <Label>Materia o tutor</Label>
+              <Input placeholder="Ej. cálculo, Laura..." />
+            </TextField>
 
-      <label className="r-field tutor-sort">
-        <span>Ordenar resultados</span>
-        <select value={filters.sortBy ?? 'RELEVANCE'} onChange={(event) => changeSort(event.target.value as TutorSortBy)}>
-          {SORT_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
-        </select>
-      </label>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <TextField
+                fullWidth
+                value={draft.maxRate}
+                onChange={(value) => setDraft({ ...draft, maxRate: value })}
+              >
+                <Label>Tarifa máxima (COP/h)</Label>
+                <Input type="number" min={0} inputMode="numeric" placeholder="Sin límite" />
+              </TextField>
 
-      {error && <Alert title="No pudimos cargar los tutores">{error}</Alert>}
-      {loading && <Loading label="Actualizando resultados…" />}
+              <Select
+                fullWidth
+                value={draft.minRating}
+                onChange={(value) => setDraft({ ...draft, minRating: String(value ?? ANY) })}
+              >
+                <Label>Calificación mínima</Label>
+                <Select.Trigger>
+                  <Select.Value />
+                  <Select.Indicator />
+                </Select.Trigger>
+                <Select.Popover>
+                  <ListBox>
+                    {RATING_OPTIONS.map((option) => (
+                      <ListBox.Item key={option.value} id={option.value} textValue={option.label}>
+                        {option.label}
+                        <ListBox.ItemIndicator />
+                      </ListBox.Item>
+                    ))}
+                  </ListBox>
+                </Select.Popover>
+              </Select>
+            </div>
 
-      <ul className="card-list">
-        {!loading && tutors?.map((tutor) => (
-          <li key={tutor.id}>
-            <button type="button" className="card tutor-card" onClick={() => onSelect(tutor.id)}>
-              <Avatar name={tutor.fullName} />
-              <div className="tutor-card__body">
-                <strong>{tutor.fullName}</strong>
-                <span className="r-muted">{tutor.subjects.map((s) => s.name).join(' · ')}</span>
-                <span className="r-muted">
-                  {tutor.reviewCount > 0
-                    ? `★ ${tutor.averageRating.toFixed(1)} · ${tutor.reviewCount} reseñas`
-                    : 'Perfil nuevo · sin reseñas'}
-                </span>
-              </div>
-              <span className="price">{formatCop(tutor.hourlyRate)}/h</span>
-            </button>
+            <Select
+              fullWidth
+              value={draft.modality}
+              onChange={(value) =>
+                setDraft({ ...draft, modality: (value ?? ANY) as typeof ANY | Modality })
+              }
+            >
+              <Label>Modalidad</Label>
+              <Select.Trigger>
+                <Select.Value />
+                <Select.Indicator />
+              </Select.Trigger>
+              <Select.Popover>
+                <ListBox>
+                  {MODALITY_OPTIONS.map((option) => (
+                    <ListBox.Item key={option.value} id={option.value} textValue={option.label}>
+                      {option.label}
+                      <ListBox.ItemIndicator />
+                    </ListBox.Item>
+                  ))}
+                </ListBox>
+              </Select.Popover>
+            </Select>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <Button type="submit">Aplicar filtros</Button>
+              <Button type="button" variant="tertiary" onPress={clearFilters}>
+                Limpiar filtros
+              </Button>
+            </div>
+          </form>
+        </Card.Content>
+      </Card>
+
+      <Select
+        fullWidth
+        value={filters.sortBy ?? 'RELEVANCE'}
+        onChange={(value) =>
+          setFilters((current) => ({
+            ...current,
+            sortBy: value as TutorSortBy,
+          }))
+        }
+      >
+        <Label>Ordenar resultados</Label>
+        <Select.Trigger>
+          <Select.Value />
+          <Select.Indicator />
+        </Select.Trigger>
+        <Select.Popover>
+          <ListBox>
+            {SORT_OPTIONS.map((option) => (
+              <ListBox.Item key={option.value} id={option.value} textValue={option.label}>
+                {option.label}
+                <ListBox.ItemIndicator />
+              </ListBox.Item>
+            ))}
+          </ListBox>
+        </Select.Popover>
+      </Select>
+
+      {error && <FlowAlert title="No pudimos cargar los tutores">{error}</FlowAlert>}
+      {loading && <Loading label="Actualizando resultados..." />}
+
+      <ul className="flex flex-col gap-3">
+        {!loading &&
+          tutors?.map((tutor) => (
+            <li key={tutor.id}>
+              <button
+                type="button"
+                className="w-full cursor-pointer text-left"
+                aria-label={`Ver el perfil de ${tutor.fullName}`}
+                onClick={() => onSelect(tutor.id)}
+              >
+                <Card className="transition-colors hover:border-accent">
+                  <Card.Content className="flex flex-col gap-2">
+                    {/* A 375 px las materias no caben junto al nombre: van debajo. */}
+                    <div className="flex flex-row flex-nowrap items-center gap-3">
+                      <Avatar name={tutor.fullName} />
+                      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                        <strong className="text-foreground">{tutor.fullName}</strong>
+                        <span className="flex items-center gap-1 text-sm text-muted">
+                          {tutor.reviewCount > 0 ? (
+                            <>
+                              <StarIcon aria-hidden="true" weight="fill" className="text-warning" />
+                              {tutor.averageRating.toFixed(1)} · {tutor.reviewCount} reseñas
+                            </>
+                          ) : (
+                            'Perfil nuevo · sin reseñas'
+                          )}
+                        </span>
+                      </div>
+                      <CaretRightIcon aria-hidden="true" className="shrink-0 text-muted" />
+                    </div>
+                    <div className="flex flex-row items-start justify-between gap-3">
+                      <span className="min-w-0 text-sm text-muted">
+                        {tutor.subjects.map((subject) => subject.name).join(' · ')}
+                      </span>
+                      <Chip className="shrink-0" size="sm" variant="soft" color="accent">
+                        {formatCop(tutor.hourlyRate)}/h
+                      </Chip>
+                    </div>
+                  </Card.Content>
+                </Card>
+              </button>
+            </li>
+          ))}
+        {!loading && tutors?.length === 0 && (
+          <li className="text-sm text-muted">
+            {filtered
+              ? 'No hay tutores que coincidan. Prueba ajustar los filtros.'
+              : 'Aún no hay tutores verificados.'}
           </li>
-        ))}
-        {!loading && tutors?.length === 0 && <li className="r-muted">No hay tutores que coincidan. Prueba ajustar los filtros.</li>}
+        )}
       </ul>
     </>
   );

@@ -5,6 +5,7 @@ import {
   HttpCode,
   HttpStatus,
   Post,
+  Query,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
@@ -27,8 +28,13 @@ export class AuthController {
 
   @Public()
   @Post('register')
+  @HttpCode(HttpStatus.ACCEPTED)
   @Throttle({ default: { limit: 10, ttl: 60_000 } })
-  @ApiOperation({ summary: 'Registrar una cuenta con correo institucional' })
+  @ApiOperation({
+    summary: 'Registrar una cuenta con correo institucional',
+    description:
+      'Responde siempre lo mismo, exista o no una cuenta con ese correo, para no permitir enumerar usuarios. El codigo de verificacion viaja por correo.',
+  })
   register(@Body() dto: RegisterDto) {
     return this.authService.register(dto);
   }
@@ -40,6 +46,17 @@ export class AuthController {
   @ApiOperation({ summary: 'Verificar el correo institucional con el codigo de 6 digitos' })
   verifyEmail(@Body() dto: VerifyEmailDto) {
     return this.authService.verifyEmail(dto);
+  }
+
+  @Public()
+  @Get('verify-email')
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  @ApiOperation({
+    summary: 'Verificar el correo institucional desde el enlace del correo',
+    description: 'Misma validacion que el POST, con los datos en la query string.',
+  })
+  verifyEmailByLink(@Query() query: VerifyEmailDto) {
+    return this.authService.verifyEmail(query);
   }
 
   @Public()

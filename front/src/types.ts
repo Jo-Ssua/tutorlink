@@ -1,3 +1,5 @@
+import type { AvailabilitySlot } from './reservas/types';
+
 export type Role = 'ADMIN' | 'STUDENT' | 'TUTOR';
 
 export type BookingStatus =
@@ -87,6 +89,8 @@ export interface Booking {
   requestId: string | null;
   proposalId: string | null;
   subject: { id: string; name: string; code: string };
+  /** En la vista del tutor el estudiante llega anonimizado. */
+  student?: { id?: string; alias?: string; fullName?: string | null } | null;
   tutor: {
     id: string;
     fullName: string;
@@ -161,6 +165,7 @@ export interface ApiErrorBody {
     code: string;
     message: string;
     details?: string[];
+    fields?: Record<string, string[]>;
   };
   meta: {
     timestamp: string;
@@ -168,4 +173,72 @@ export interface ApiErrorBody {
     requestId: string;
     statusCode: number;
   };
+}
+
+export interface AdminStats {
+  users: { students: number; tutors: number; admins: number };
+  applications: { pendingTutorApplications: number; pendingSubjects: number };
+  bookings: { pending: number; confirmed: number; completed: number; cancelled: number };
+  simulatedRevenue: {
+    gross: number;
+    platformFees: number;
+    tutorEarnings: number;
+    currency: string;
+  };
+}
+
+export interface TutorApplication {
+  id: string;
+  userId: string;
+  fullName: string;
+  institutionalEmail: string;
+  userStatus: string;
+  verificationStatus: string;
+  hourlyRate: number;
+  experienceYears: number;
+  createdAt: string;
+  subjects: Array<{
+    id: string;
+    status: string;
+    subject: { id: string; name: string; code: string };
+  }>;
+}
+
+export interface TutorApplicationList {
+  items: TutorApplication[];
+  pagination: PaginationMeta;
+}
+
+export interface Program {
+  id: string;
+  name: string;
+  code: string;
+  faculty: { id: string; name: string; code: string };
+}
+
+export interface RegisterPayload {
+  fullName: string;
+  email: string;
+  password: string;
+  studentCode?: string;
+  programId?: string;
+  semester?: number;
+}
+
+/**
+ * Respuesta de /auth/register y /auth/resend-verification. Es la misma exista o
+ * no una cuenta con ese correo: la API no revela si el correo esta registrado.
+ */
+export interface VerificationPending {
+  email: string;
+  verificationRequired: true;
+  verificationExpiresAt: string;
+  /** Solo en desarrollo, con EXPOSE_DEV_CODES=true. */
+  devVerificationCode?: string;
+  message: string;
+}
+
+export interface VerifyEmailResult {
+  verified: true;
+  user: { id: string; email: string; role: Role; status: string };
 }

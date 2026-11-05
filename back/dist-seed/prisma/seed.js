@@ -33,9 +33,12 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
+const adapter_pg_1 = require("@prisma/adapter-pg");
 const client_1 = require("@prisma/client");
 const bcrypt = __importStar(require("bcryptjs"));
-const prisma = new client_1.PrismaClient();
+const prisma = new client_1.PrismaClient({
+    adapter: new adapter_pg_1.PrismaPg({ connectionString: process.env.DATABASE_URL ?? '' }),
+});
 const PASSWORD = 'TutorLink123*';
 const ids = {
     users: {

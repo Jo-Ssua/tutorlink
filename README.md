@@ -15,7 +15,7 @@ Proyecto académico de la asignatura Gerencia de Proyectos de TI (Universidad Ic
 ## Funcionalidades
 | Área | Descripción |
 | --- | --- |
-| Autenticación | Registro con correo institucional, verificación, login, refresh y logout (JWT) |
+| **Autenticación** | Registro con correo institucional, verificación por código o enlace, login por rol, refresh y cierre de sesión que invalida los tokens al instante (SCRUM-5 a SCRUM-7) |
 | Tutores | Postulación, aprobación por administrador, verificación de materias, perfil público |
 | Búsqueda | Filtros por facultad, programa, materia, profesor, tarifa, calificación y modalidad |
 | **Disponibilidad** | Consulta de franjas libres del tutor, siempre actualizadas (SCRUM-20) |
@@ -24,6 +24,20 @@ Proyecto académico de la asignatura Gerencia de Proyectos de TI (Universidad Ic
 | StudyMatch | Asignación automática de tutor para solicitudes urgentes |
 | Administración | Aprobación de tutores, métricas y notificaciones |
 > Los pagos son **simulados**: no se procesan ni se solicitan datos bancarios reales.
+
+### Flujo de registro y acceso
+```text
+Estudiante: /registro con su correo institucional -> la API acepta sin decir si el correo ya existía
+Correo:     llega un código de 6 dígitos y un enlace, válidos 15 minutos
+Estudiante: escribe el código en /verificar, o abre el enlace => cuenta ACTIVA
+Estudiante: inicia sesión => entra a la pantalla de su rol
+Estudiante: cierra sesión => volver atrás no sirve, hay que autenticarse de nuevo
+```
+Reglas clave de acceso:
+- Solo se aceptan los dominios de `INSTITUTIONAL_EMAIL_DOMAINS`; cualquier otro se rechaza informando el formato aceptado.
+- Un correo o una contraseña incorrectos dan el mismo error, así que la API no sirve para averiguar qué correos están registrados.
+- Cinco intentos fallidos bloquean la cuenta 15 minutos, además del límite por IP.
+- Cinco códigos errados invalidan el código; se piden otro con un minuto de espera entre envíos.
 
 ### Flujo de una reserva
 ```text
@@ -110,6 +124,8 @@ npm test -- --runInBand        # pruebas unitarias
 npm run test:e2e               # requiere PostgreSQL con migraciones
 node scripts/smoke-test.mjs    # requiere la API corriendo con datos seed
 cd ../front
+npm run lint
+npm test                       # pruebas con Vitest
 npm run build                  # typecheck + build de producción
 ```
 ## Solución de problemas
@@ -119,6 +135,9 @@ npm run build                  # typecheck + build de producción
 | `listen EACCES ... :5173` al iniciar el front | Windows reservó ese rango de puertos. Usa `npm run dev -- --port 3001`, o reinicia WinNAT (`net stop winnat` y `net start winnat` como administrador, con Docker cerrado). |
 | Errores de certificado (`UNABLE_TO_VERIFY_LEAF_SIGNATURE`) en `npm install` | En redes con inspección TLS ejecuta antes `$env:NODE_OPTIONS="--use-system-ca"` (PowerShell). |
 | `429 RATE_LIMITED` en login | El login admite 10 intentos por minuto; espera un momento. |
+| No llega el correo de verificación | Con `MAIL_TRANSPORT=console` (por defecto) el correo se escribe en el log de la API. Para verlo en un buzón: `docker compose --profile mail up -d` y abre http://localhost:8025. |
+| No se puede leer el código en pruebas | Pon `EXPOSE_DEV_CODES=true` en `back/.env` (no funciona con `NODE_ENV=production`): la respuesta del registro trae `devVerificationCode`. |
+| `401 TOKEN_REVOKED` tras actualizar | Cerrar sesión invalida los tokens anteriores, y la primera vez que se despliega esta versión todos quedan invalidados. Inicia sesión de nuevo. |
 | Datos de prueba alterados | Restablece con `docker compose down -v && docker compose up -d --build` en `back/`. |
 
 ## Variables de entorno principales
@@ -129,7 +148,12 @@ npm run build                  # typecheck + build de producción
 | `CORS_ORIGINS` | `back/.env` | Orígenes permitidos del frontend |
 | `PLATFORM_FEE_PERCENT` | `back/.env` | Comisión de la plataforma (por defecto 10 %) |
 | `CANCELLATION_WINDOW_HOURS` | `back/.env` | Anticipación mínima para cancelar (por defecto 24 h) |
+| `APP_URL` | `back/.env` | URL pública del frontend; base de los enlaces que viajan por correo |
+| `INSTITUTIONAL_EMAIL_DOMAINS` | `back/.env` | Dominios de correo aceptados en el registro |
+| `MAIL_TRANSPORT` | `back/.env` | `console` escribe el correo en el log; `smtp` lo envía de verdad |
+| `EXPOSE_DEV_CODES` | `back/.env` | Devuelve el código de verificación en la respuesta; solo fuera de producción |
 | `VITE_API_URL` | `front/.env` | URL base de la API |
+| `VITE_INSTITUTIONAL_DOMAINS` | `front/.env` | Dominios que el formulario de registro acepta; debe coincidir con el backend |
 La lista completa está en `back/.env.example`.
 
 ## Flujo de trabajo del equipo
