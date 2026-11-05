@@ -1,4 +1,5 @@
 export type Modality = 'IN_PERSON' | 'VIRTUAL' | 'HYBRID';
+export type VerificationStatus = 'PENDING' | 'VERIFIED' | 'REJECTED';
 export type ChosenModality = 'IN_PERSON' | 'VIRTUAL';
 export type BookingStatus =
   | 'PENDING'
@@ -57,6 +58,14 @@ export interface TutorList {
 export interface TutorSubjectDetail extends SubjectRef {
   program: string;
   faculty: string;
+  status: VerificationStatus;
+}
+
+export interface TutorReview {
+  rating: number;
+  comment: string;
+  createdAt: string;
+  subject: string;
 }
 
 export interface AvailabilitySlot {
@@ -77,8 +86,10 @@ export interface TutorProfile {
   averageRating: number;
   reviewCount: number;
   hasReviews: boolean;
+  verificationStatus: VerificationStatus;
   completedSessions: number;
   subjects: TutorSubjectDetail[];
+  recentReviews: TutorReview[];
   nextAvailability: AvailabilitySlot[];
 }
 

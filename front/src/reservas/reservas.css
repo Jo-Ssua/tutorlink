@@ -195,6 +195,46 @@ ul {
   gap: 14px;
 }
 
+.profile-head__info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.verification-badge {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: var(--success-soft);
+  color: var(--success);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.profile-stats {
+  flex-direction: row;
+  justify-content: space-around;
+  text-align: center;
+}
+
+.profile-stats > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.profile-stats strong {
+  font-size: 20px;
+}
+
+.profile-stats span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
 .big-price {
   font-size: 26px;
   font-weight: 800;
@@ -231,6 +271,86 @@ ul {
   background: transparent;
   border: 1px solid var(--line);
   color: var(--ink);
+}
+
+.subject-list,
+.review-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.subject-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.subject-list li:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.subject-list li > div {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.subject-list li span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.subject-list .subject-status {
+  flex: none;
+  color: var(--success);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.reviews-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.reviews-heading h3 {
+  font-size: 22px;
+}
+
+.review-count {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.review-list li {
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+
+.review-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.review-stars {
+  color: #e6a51a;
+  letter-spacing: 1px;
+}
+
+.review-list p {
+  margin-top: 5px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.45;
 }
 
 .check-list {
