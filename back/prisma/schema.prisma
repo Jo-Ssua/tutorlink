@@ -4,7 +4,6 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 enum Role {
@@ -114,9 +113,13 @@ model User {
   status                     UserStatus @default(PENDING_VERIFICATION)
   emailVerificationCodeHash  String?
   emailVerificationExpiresAt DateTime?
+  emailVerificationAttempts  Int       @default(0)
   verificationSentAt         DateTime?
   emailVerifiedAt            DateTime?
   refreshTokenHash           String?
+  tokenVersion               Int       @default(0)
+  failedLoginAttempts        Int       @default(0)
+  lockedUntil                DateTime?
   lastLoginAt                DateTime?
   createdAt                  DateTime  @default(now())
   updatedAt                  DateTime  @updatedAt

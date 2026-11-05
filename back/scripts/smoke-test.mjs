@@ -34,6 +34,111 @@ function bearer(token) {
   return { authorization: `Bearer ${token}` };
 }
 
+/** Llama la API esperando un fallo concreto, sin que el helper `api` lo lance. */
+async function expectError(path, options, status, code) {
+  const response = await fetch(`${baseUrl}${path}`, {
+    ...options,
+    headers: {
+      'content-type': 'application/json',
+      ...(options.headers ?? {}),
+    },
+    signal: AbortSignal.timeout(20_000),
+  });
+  const body = await response.json();
+
+  assert.equal(response.status, status, `${path} deberia responder ${status}`);
+  assert.equal(body.success, false);
+  assert.equal(body.error.code, code, `${path} deberia fallar con ${code}`);
+
+  return body.error;
+}
+
+/**
+ * Registro con correo institucional, verificacion, inicio y cierre de sesion.
+ *
+ * La parte de verificacion necesita EXPOSE_DEV_CODES=true, porque el codigo
+ * llega por correo y el smoke test no lee buzones; sin la bandera se salta esa
+ * mitad y avisa.
+ */
+async function authFlow() {
+  const external = await expectError(
+    '/auth/register',
+    {
+      method: 'POST',
+      body: JSON.stringify({
+        email: 'smoke@gmail.com',
+        password,
+        fullName: 'Correo Externo',
+      }),
+    },
+    400,
+    'NON_INSTITUTIONAL_EMAIL',
+  );
+  assert.match(external.message, /universidad/i, 'El error debe informar el formato aceptado');
+  console.log('OK registro rechaza correo no institucional');
+
+  const email = `smoke.${Date.now()}@universidad.edu.co`;
+  const pending = await api('/auth/register', {
+    method: 'POST',
+    body: JSON.stringify({ email, password, fullName: 'Smoke Test' }),
+  });
+  assert.equal(pending.verificationRequired, true);
+  assert.equal(pending.user, undefined, 'El registro no debe devolver datos de la cuenta');
+  console.log(`OK registro de ${email}`);
+
+  await expectError(
+    '/auth/login',
+    { method: 'POST', body: JSON.stringify({ email, password }) },
+    403,
+    'EMAIL_NOT_VERIFIED',
+  );
+  console.log('OK login bloqueado antes de verificar');
+
+  if (!pending.devVerificationCode) {
+    console.log('SKIP verificacion: enciende EXPOSE_DEV_CODES=true para probarla');
+    return;
+  }
+
+  await expectError(
+    '/auth/verify-email',
+    { method: 'POST', body: JSON.stringify({ email, code: '000000' }) },
+    400,
+    'INVALID_VERIFICATION_CODE',
+  );
+
+  const verified = await api('/auth/verify-email', {
+    method: 'POST',
+    body: JSON.stringify({ email, code: pending.devVerificationCode }),
+  });
+  assert.equal(verified.verified, true);
+  assert.equal(verified.user.status, 'ACTIVE');
+  console.log('OK cuenta verificada con el codigo');
+
+  const invalid = await expectError(
+    '/auth/login',
+    { method: 'POST', body: JSON.stringify({ email, password: 'NoEsLaClave1' }) },
+    401,
+    'INVALID_CREDENTIALS',
+  );
+  assert.equal(invalid.details?.length ?? 0, 0, 'El error de credenciales no debe dar detalles');
+  console.log('OK error de credenciales uniforme');
+
+  const session = await login(email);
+  assert.equal(session.user.role, 'STUDENT');
+  const profile = await api('/auth/me', { headers: bearer(session.accessToken) });
+  assert.equal(profile.email, email);
+
+  const loggedOut = await api('/auth/logout', {
+    method: 'POST',
+    headers: bearer(session.accessToken),
+  });
+  assert.equal(loggedOut.loggedOut, true);
+
+  // El access token deja de valer de inmediato, sin esperar a que expire.
+  await expectError('/auth/me', { headers: bearer(session.accessToken) }, 401, 'TOKEN_REVOKED');
+  console.log('OK cierre de sesion invalida el access token');
+}
+
 async function main() {
   console.log(`Smoke test contra ${baseUrl}`);
 
@@ -198,6 +303,8 @@ async function main() {
   const me = await api('/auth/me', { headers: bearer(refreshed.accessToken) });
   assert.equal(me.id, student.user.id);
   console.log('OK refresh token y /auth/me');
+
+  await authFlow();
 
   const openapi = await fetch('http://localhost:3000/docs-json').then((response) =>
     response.json(),

@@ -28,6 +28,7 @@ services:
       NODE_ENV: development
       PORT: 3000
       API_PREFIX: api/v1
+      APP_URL: ${APP_URL:-http://localhost:5173}
       DATABASE_URL: postgresql://tutorlink:tutorlink@postgres:5432/tutorlink?schema=public
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-dev-access-secret-change-me-32-characters}
       JWT_ACCESS_EXPIRES_IN: 15m
@@ -36,6 +37,14 @@ services:
       EMAIL_CODE_SECRET: ${EMAIL_CODE_SECRET:-dev-email-code-secret-change-me-32-characters}
       ANONYMITY_SALT: ${ANONYMITY_SALT:-tutorlink-dev-anonymity-salt}
       INSTITUTIONAL_EMAIL_DOMAINS: universidad.edu.co,estudiantes.universidad.edu.co
+      INSTITUTIONAL_DOMAIN_FACULTIES: ${INSTITUTIONAL_DOMAIN_FACULTIES:-}
+      MAIL_TRANSPORT: ${MAIL_TRANSPORT:-console}
+      MAIL_FROM: ${MAIL_FROM:-TutorLink <no-reply@tutorlink.local>}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_SECURE: ${SMTP_SECURE:-false}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
       CORS_ORIGINS: http://localhost:3001,http://localhost:5173
       PLATFORM_FEE_PERCENT: 10
       CANCELLATION_WINDOW_HOURS: 24
@@ -44,7 +53,7 @@ services:
       STUDYMATCH_TTL_MEDIUM_MINUTES: 20
       STUDYMATCH_TTL_LOW_MINUTES: 30
       STUDYMATCH_STUDENT_CONFIRM_MINUTES: 10
-      EXPOSE_DEV_CODES: "true"
+      EXPOSE_DEV_CODES: ${EXPOSE_DEV_CODES:-false}
       RUN_MIGRATIONS: "true"
       SEED_ON_START: ${DOCKER_SEED_ON_START:-true}
     ports:
@@ -55,6 +64,17 @@ services:
       timeout: 5s
       retries: 10
       start_period: 30s
+
+  # Buzon SMTP local para ver los correos de verificacion en un navegador.
+  # Solo arranca con: docker compose --profile mail up -d
+  # Luego en .env: MAIL_TRANSPORT=smtp, SMTP_HOST=mailpit, SMTP_PORT=1025
+  mailpit:
+    image: axllent/mailpit:v1.21
+    container_name: tutorlink-mailpit
+    profiles: ["mail"]
+    ports:
+      - "${MAILPIT_SMTP_PORT:-1025}:1025"
+      - "${MAILPIT_UI_PORT:-8025}:8025"
 
 volumes:
   tutorlink-pgdata:

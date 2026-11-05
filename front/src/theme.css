@@ -1,0 +1,174 @@
+/* Tailwind v4 primero, HeroUI después: el orden importa. */
+@import 'tailwindcss';
+@import '@heroui/styles';
+
+/*
+ * Tokens de marca de TutorLink.
+ *
+ * HeroUI v3 nombra los colores por intención (`accent`, `success`, `danger`),
+ * no por tono: los componentes leen estas variables y se adaptan solos al modo
+ * claro y al oscuro. Aquí solo se redefine lo que es propio de la marca; el
+ * resto se hereda de `@heroui/styles`.
+ */
+
+@theme {
+  --font-sans:
+    'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+
+  /* 375 / 768 / 1024 / 1440: los anchos con los que se revisa cada pantalla. */
+  --breakpoint-xs: 23.4375rem;
+  --breakpoint-2xl: 90rem;
+}
+
+/*
+ * `@heroui/styles` expone sus tokens como variables sueltas (`--surface`,
+ * `--accent`...) pero solo publica unas pocas como colores de Tailwind, así que
+ * `bg-surface` o `text-foreground` no existirían. Aquí se completa el puente,
+ * `inline` para que la utilidad siga apuntando a la variable y cambie sola al
+ * pasar a modo oscuro.
+ */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-surface-foreground: var(--surface-foreground);
+  --color-overlay: var(--overlay);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --color-danger-foreground: var(--danger-foreground);
+  --color-border: var(--border);
+  --color-separator: var(--separator);
+  --color-focus: var(--focus);
+}
+
+/* Que los controles nativos (scrollbars, autocompletado) sigan el mismo modo. */
+:root {
+  color-scheme: light;
+}
+
+[data-theme='dark'] {
+  color-scheme: dark;
+}
+
+:root,
+[data-theme='light'] {
+  /* Morado de TutorLink. Blanco encima da 5.6:1. */
+  --accent: oklch(54.1% 0.281 293.009);
+  --accent-foreground: var(--white);
+
+  /* Verde de confirmación (pago hecho, reserva creada). Blanco encima: 5.0:1. */
+  --success: oklch(52.7% 0.154 150.069);
+  --success-foreground: var(--white);
+
+  --radius: 0.75rem;
+}
+
+/*
+ * Correcciones de contraste del modo claro. Van aquí y no en `:root` porque
+ * en oscuro los valores de HeroUI sí cumplen y hay que dejarlos en paz.
+ */
+[data-theme='light'] {
+  /*
+   * El ámbar de HeroUI está pensado como fondo (L 78%). Como color de dibujo
+   * —las estrellas de la calificación— se queda en 2,0:1 sobre blanco, por
+   * debajo del 3:1 que pide un gráfico con significado. Se baja hasta 5,6:1,
+   * y como ahora es un fondo oscuro, lo que va encima pasa a blanco.
+   */
+  --warning: oklch(52% 0.13 72);
+  --warning-foreground: var(--white);
+
+  /* El gris de texto secundario se quedaba en 4,43:1 sobre el fondo de página. */
+  --muted: oklch(50% 0.014 285.94);
+
+  /*
+   * El rojo de HeroUI (L 65%) también está pensado como fondo, y es el color
+   * con el que se pintan la etiqueta y el mensaje de un campo inválido: 3,27:1
+   * sobre el fondo de página. Bajado da 5,6:1, y blanco encima sigue en 6,1:1.
+   */
+  --danger: oklch(52% 0.2 26);
+}
+
+[data-theme='dark'] {
+  /* Sobre fondo oscuro el morado sube de luminosidad en vez de invertirse. */
+  --accent: oklch(70.2% 0.183 293.541);
+  --accent-foreground: var(--eclipse);
+
+  --success: oklch(79.2% 0.209 151.711);
+  --success-foreground: var(--eclipse);
+}
+
+html,
+body,
+#root {
+  min-height: 100dvh;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  /* El lienzo también en modo oscuro: sin esto el rebote del scroll es blanco. */
+  background: var(--background);
+  color: var(--foreground);
+}
+
+/*
+ * El área pulsable de un radio o una casilla es su `<label>` interna —el
+ * contenedor de fuera es un `div` y crecerlo solo dejaría hueco muerto— y mide
+ * lo que mide el texto: 20 px. Con ratón se lleva al mínimo de 24 px que pide
+ * la WCAG 2.2; el contenido se centra para no mover el dibujo del control.
+ */
+[data-slot='radio-content'],
+[data-slot='checkbox-content'] {
+  min-height: 1.5rem;
+  align-items: center;
+}
+
+/*
+ * En pantallas táctiles ningún botón baja de 44 px de alto, que es el objetivo
+ * mínimo cómodo para un dedo: los tamaños `sm` (36 px) y `md` (40 px) de HeroUI
+ * se quedan cortos. Con ratón se respeta la densidad original.
+ */
+@media (pointer: coarse) {
+  [data-slot='button'],
+  [data-slot='select-trigger'],
+  [data-slot='input'],
+  [data-slot='list-box-item'] {
+    min-height: 2.75rem;
+  }
+
+  /*
+   * El calendario de HeroUI está dimensionado para ratón: celdas de 36 px y
+   * flechas de mes de 24 px. En táctil se llevan al mismo mínimo que un botón.
+   */
+  [data-slot='calendar-cell'],
+  [data-slot='calendar-nav-button'] {
+    min-width: 2.75rem;
+    min-height: 2.75rem;
+  }
+
+  [data-slot='radio-content'],
+  [data-slot='checkbox-content'] {
+    min-height: 2.75rem;
+  }
+}
+
+/* El foco tiene que verse siempre, también sobre fondos de color. */
+:focus-visible {
+  outline: 2px solid var(--focus, var(--accent));
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
