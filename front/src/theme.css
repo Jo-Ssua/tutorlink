@@ -45,6 +45,15 @@
   --color-focus: var(--focus);
 }
 
+/* Que los controles nativos (scrollbars, autocompletado) sigan el mismo modo. */
+:root {
+  color-scheme: light;
+}
+
+[data-theme='dark'] {
+  color-scheme: dark;
+}
+
 :root,
 [data-theme='light'] {
   /* Morado de TutorLink. Blanco encima da 5.6:1. */
@@ -56,6 +65,31 @@
   --success-foreground: var(--white);
 
   --radius: 0.75rem;
+}
+
+/*
+ * Correcciones de contraste del modo claro. Van aquí y no en `:root` porque
+ * en oscuro los valores de HeroUI sí cumplen y hay que dejarlos en paz.
+ */
+[data-theme='light'] {
+  /*
+   * El ámbar de HeroUI está pensado como fondo (L 78%). Como color de dibujo
+   * —las estrellas de la calificación— se queda en 2,0:1 sobre blanco, por
+   * debajo del 3:1 que pide un gráfico con significado. Se baja hasta 5,6:1,
+   * y como ahora es un fondo oscuro, lo que va encima pasa a blanco.
+   */
+  --warning: oklch(52% 0.13 72);
+  --warning-foreground: var(--white);
+
+  /* El gris de texto secundario se quedaba en 4,43:1 sobre el fondo de página. */
+  --muted: oklch(50% 0.014 285.94);
+
+  /*
+   * El rojo de HeroUI (L 65%) también está pensado como fondo, y es el color
+   * con el que se pintan la etiqueta y el mensaje de un campo inválido: 3,27:1
+   * sobre el fondo de página. Bajado da 5,6:1, y blanco encima sigue en 6,1:1.
+   */
+  --danger: oklch(52% 0.2 26);
 }
 
 [data-theme='dark'] {
@@ -76,6 +110,50 @@ body,
 body {
   margin: 0;
   font-family: var(--font-sans);
+  /* El lienzo también en modo oscuro: sin esto el rebote del scroll es blanco. */
+  background: var(--background);
+  color: var(--foreground);
+}
+
+/*
+ * El área pulsable de un radio o una casilla es su `<label>` interna —el
+ * contenedor de fuera es un `div` y crecerlo solo dejaría hueco muerto— y mide
+ * lo que mide el texto: 20 px. Con ratón se lleva al mínimo de 24 px que pide
+ * la WCAG 2.2; el contenido se centra para no mover el dibujo del control.
+ */
+[data-slot='radio-content'],
+[data-slot='checkbox-content'] {
+  min-height: 1.5rem;
+  align-items: center;
+}
+
+/*
+ * En pantallas táctiles ningún botón baja de 44 px de alto, que es el objetivo
+ * mínimo cómodo para un dedo: los tamaños `sm` (36 px) y `md` (40 px) de HeroUI
+ * se quedan cortos. Con ratón se respeta la densidad original.
+ */
+@media (pointer: coarse) {
+  [data-slot='button'],
+  [data-slot='select-trigger'],
+  [data-slot='input'],
+  [data-slot='list-box-item'] {
+    min-height: 2.75rem;
+  }
+
+  /*
+   * El calendario de HeroUI está dimensionado para ratón: celdas de 36 px y
+   * flechas de mes de 24 px. En táctil se llevan al mismo mínimo que un botón.
+   */
+  [data-slot='calendar-cell'],
+  [data-slot='calendar-nav-button'] {
+    min-width: 2.75rem;
+    min-height: 2.75rem;
+  }
+
+  [data-slot='radio-content'],
+  [data-slot='checkbox-content'] {
+    min-height: 2.75rem;
+  }
 }
 
 /* El foco tiene que verse siempre, también sobre fondos de color. */
