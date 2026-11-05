@@ -2,3 +2,4 @@ node_modules
 
 # Skills instaladas con `npx skills add`; el lock sí se versiona.
 .agents/
+.claude/
