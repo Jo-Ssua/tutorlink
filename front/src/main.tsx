@@ -1,7 +1,10 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App';
-import './styles.css';
+import { followSystemTheme } from './theme';
+import './theme.css';
+
+followSystemTheme();
 
 const container = document.getElementById('root');
 if (!container) {

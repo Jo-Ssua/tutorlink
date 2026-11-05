@@ -107,13 +107,65 @@ Los listados aceptan `page` (default `1`) y `limit` (default `20`, maximo `100`)
 
 | Metodo | Ruta | Rol | Descripcion | Body |
 | --- | --- | --- | --- | --- |
-| POST | `/auth/register` | Publico | Registro con correo institucional | `fullName`, `email`, `password`, `studentCode?`, `programId?`, `semester?` |
+| POST | `/auth/register` | Publico | Registro con correo institucional (202) | `fullName`, `email`, `password`, `studentCode?`, `programId?`, `semester?` |
 | POST | `/auth/verify-email` | Publico | Verificar cuenta con codigo | `email`, `code` |
+| GET | `/auth/verify-email` | Publico | Verificar desde el enlace del correo | query `email`, `code` |
 | POST | `/auth/resend-verification` | Publico | Reenviar codigo | `email` |
 | POST | `/auth/login` | Publico | Iniciar sesion | `email`, `password` |
 | POST | `/auth/refresh` | Publico | Rotar access y refresh token | `refreshToken` |
-| POST | `/auth/logout` | Autenticado | Cerrar sesion | - |
+| POST | `/auth/logout` | Autenticado | Cerrar sesion en todos los dispositivos | - |
 | GET | `/auth/me` | Autenticado | Consultar usuario actual | - |
+
+### Registro y verificacion
+
+`POST /auth/register` responde `202 Accepted` con la misma forma exista o no una
+cuenta con ese correo, para que la API no sirva como lista de correos
+registrados. El correo es el unico canal que distingue los casos: una cuenta
+nueva o pendiente recibe un codigo de 6 digitos y un enlace, y una cuenta ya
+activa recibe un aviso de que la cuenta existe.
+
+```json
+{
+  "email": "nueva@universidad.edu.co",
+  "verificationRequired": true,
+  "verificationExpiresAt": "2026-11-03T18:15:00.000Z",
+  "message": "Revisa tu correo institucional para continuar con la activacion de tu cuenta."
+}
+```
+
+Reglas del codigo:
+
+- Vale 15 minutos y se consume al usarlo.
+- Cinco intentos fallidos lo invalidan: hay que pedir otro.
+- Entre dos envios al mismo correo hay 60 segundos de espera.
+- Con `EXPOSE_DEV_CODES=true` (nunca en produccion) la respuesta agrega
+  `devVerificationCode`, para probar sin leer el buzon.
+
+El enlace del correo apunta a `APP_URL` + `MAIL_VERIFICATION_PATH`
+(`/verificar?email=...&code=...`), que el frontend resuelve; `GET
+/auth/verify-email` acepta los mismos parametros para verificar sin frontend.
+
+Si `INSTITUTIONAL_DOMAIN_FACULTIES` esta configurado, el `programId` debe
+pertenecer a una de las facultades habilitadas para el dominio del correo
+(`PROGRAM_NOT_IN_DOMAIN_SCOPE`).
+
+### Inicio y cierre de sesion
+
+`POST /auth/login` devuelve siempre `401 INVALID_CREDENTIALS` cuando el correo
+no existe, la contrasena es incorrecta o la cuenta esta bloqueada: ninguno de
+los tres casos se distingue por codigo, mensaje ni tiempo de respuesta. Cinco
+intentos fallidos bloquean la cuenta 15 minutos, lo que complementa el limite
+por IP del throttler.
+
+Con la contrasena correcta si se informa el motivo real del rechazo, porque
+quien pregunta ya demostro ser el dueno de la cuenta: `403 EMAIL_NOT_VERIFIED`
+o `403 ACCOUNT_SUSPENDED`.
+
+`POST /auth/logout` borra el refresh token e incrementa `tokenVersion`, que
+viaja en el claim `tv` de cada token: los access tokens ya emitidos dejan de
+valer de inmediato (`401 TOKEN_REVOKED`) en vez de seguir vivos hasta expirar.
+El modelo guarda un solo refresh token por usuario, asi que cerrar sesion la
+cierra en todos los dispositivos.
 
 Ejemplo de login:
 
@@ -167,7 +219,7 @@ Todos son publicos.
 | --- | --- | --- | --- |
 | GET | `/tutors` | Buscar tutores | Ver filtros abajo |
 | GET | `/tutors/:id` | Perfil publico del tutor | - |
-| GET | `/tutors/:id/availability` | Franjas disponibles | `from?`, `to?`, `modality?` |
+| GET | `/tutors/:id/availability` | Franjas disponibles (solo futuras y `AVAILABLE`; respuesta sin cache, incluye `durationMinutes`) | `from?`, `to?`, `modality?` |
 | GET | `/tutors/:id/reviews` | Resenas verificadas | `page?`, `limit?` |
 
 Filtros de `GET /tutors`:
@@ -410,7 +462,24 @@ Contenido de `data`:
 | 409 | `CONFLICT` | Franja ocupada, solicitud activa duplicada, etc. |
 | 429 | `RATE_LIMITED` | Limite de solicitudes excedido |
 
-El login permite 10 solicitudes por minuto. El limite general es 120 solicitudes por minuto.
+Propios de autenticacion:
+
+| Codigo HTTP | Codigo interno | Causa |
+| --- | --- | --- |
+| 400 | `NON_INSTITUTIONAL_EMAIL` | El dominio del correo no es institucional; el mensaje lista los aceptados |
+| 400 | `PROGRAM_NOT_IN_DOMAIN_SCOPE` | El programa no pertenece a las facultades habilitadas para el dominio |
+| 400 | `INVALID_VERIFICATION_CODE` | Codigo incorrecto; `details` dice cuantos intentos quedan |
+| 400 | `VERIFICATION_CODE_EXPIRED` | El codigo paso de 15 minutos |
+| 400 | `VERIFICATION_ATTEMPTS_EXCEEDED` | Cinco intentos fallidos; el codigo quedo invalidado |
+| 401 | `INVALID_CREDENTIALS` | Correo inexistente, contrasena incorrecta o cuenta bloqueada |
+| 401 | `TOKEN_REVOKED` | El access token quedo invalidado al cerrar sesion |
+| 401 | `REFRESH_TOKEN_REVOKED` | El refresh token ya no corresponde a la sesion vigente |
+| 403 | `EMAIL_NOT_VERIFIED` | Credenciales correctas, cuenta sin verificar |
+| 403 | `ACCOUNT_SUSPENDED` | Credenciales correctas, cuenta suspendida |
+| 409 | `EMAIL_ALREADY_VERIFIED` | La cuenta ya estaba activa |
+
+El login permite 10 solicitudes por minuto y el reenvio de codigo 5. El limite
+general es 120 solicitudes por minuto.
 
 ## Credenciales demo
 

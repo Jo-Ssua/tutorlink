@@ -8,20 +8,21 @@ export type BookingStatus =
   | 'CANCELLED'
   | 'COMPLETED';
 
-export interface ApiSuccess<T> {
-  success: true;
-  data: T;
+export type TutorSortBy = 'RELEVANCE' | 'RATING' | 'PRICE' | 'AVAILABILITY';
+
+export interface TutorSearchFilters {
+  q?: string;
+  minRating?: number;
+  maxRate?: number;
+  modality?: Modality;
+  subjectId?: string;
+  sortBy?: TutorSortBy;
 }
 
-export interface ApiErrorBody {
-  success: false;
-  error: {
-    code?: string;
-    message?: string;
-    details?: string[];
-    fields?: Record<string, string[]>;
-  };
-}
+/*
+ * `ApiSuccess` y `ApiErrorBody` vivían aquí duplicados; ahora están en
+ * `src/types.ts` porque el transporte es el `request()` compartido.
+ */
 
 export interface Pagination {
   page: number;
@@ -93,6 +94,7 @@ export interface AvailabilitySlot {
   endAt: string;
   modality: Modality;
   status: 'AVAILABLE' | 'HELD' | 'RESERVED' | 'BLOCKED';
+  durationMinutes?: number;
 }
 
 export interface TutorProfile {
