@@ -10,7 +10,13 @@ import {
   listTutors,
 } from '../api';
 import { Avatar, FlowAlert, Loading, ScreenHeader } from '../components/ui';
-import { formatCop, formatLongDate, formatTime } from '../format';
+import {
+  VERIFICATION_COLOR,
+  VERIFICATION_LABEL,
+  formatCop,
+  formatLongDate,
+  formatTime,
+} from '../format';
 import type {
   FacultyOption,
   Modality,
@@ -20,7 +26,6 @@ import type {
   TutorList,
   TutorSearchFilters,
   TutorSortBy,
-  VerificationStatus,
 } from '../types';
 
 const SORT_OPTIONS: Array<{ value: TutorSortBy; label: string }> = [
@@ -49,18 +54,6 @@ const MODALITY_OPTIONS = [
   { value: 'IN_PERSON', label: 'Presencial' },
   { value: 'HYBRID', label: 'Híbrida' },
 ];
-
-const VERIFICATION_LABEL: Record<VerificationStatus, string> = {
-  VERIFIED: 'Verificado',
-  PENDING: 'Pendiente',
-  REJECTED: 'Rechazado',
-};
-
-const VERIFICATION_COLOR: Record<VerificationStatus, 'success' | 'warning' | 'danger'> = {
-  VERIFIED: 'success',
-  PENDING: 'warning',
-  REJECTED: 'danger',
-};
 
 const EMPTY_DRAFT = {
   q: '',

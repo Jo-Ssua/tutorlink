@@ -102,7 +102,8 @@ export interface TutorSubjectDetail extends SubjectRef {
 
 export interface TutorReview {
   rating: number;
-  comment: string;
+  /** La reseña puede ser solo estrellas: el comentario es opcional. */
+  comment: string | null;
   createdAt: string;
   subject: string;
 }

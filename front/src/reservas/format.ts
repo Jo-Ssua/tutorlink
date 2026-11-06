@@ -1,4 +1,4 @@
-import type { ChosenModality, Modality } from './types';
+import type { ChosenModality, Modality, VerificationStatus } from './types';
 
 const copFormatter = new Intl.NumberFormat('es-CO', {
   style: 'currency',
@@ -44,6 +44,15 @@ export function formatLongDate(iso: string): string {
   return text.charAt(0).toUpperCase() + text.slice(1);
 }
 
+/** Fecha con año, para lo que no ocurre esta semana: una reseña, por ejemplo. */
+export function formatFullDate(iso: string): string {
+  return new Intl.DateTimeFormat('es-CO', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  }).format(new Date(iso));
+}
+
 export function formatShortDay(iso: string): { weekday: string; day: number } {
   const date = new Date(iso);
   const weekday = new Intl.DateTimeFormat('es-CO', { weekday: 'short' })
@@ -82,6 +91,23 @@ export const MODALITY_LABEL: Record<Modality, string> = {
   VIRTUAL: 'Virtual',
   IN_PERSON: 'Presencial',
   HYBRID: 'Virtual o presencial',
+};
+
+/*
+ * Estado de verificación del tutor. Vive aquí porque lo pintan tanto la
+ * tarjeta de resultados como el perfil público, y los dos tienen que decir lo
+ * mismo: es el dato en el que se apoya el estudiante para confiar en el perfil.
+ */
+export const VERIFICATION_LABEL: Record<VerificationStatus, string> = {
+  VERIFIED: 'Verificado',
+  PENDING: 'Pendiente',
+  REJECTED: 'Rechazado',
+};
+
+export const VERIFICATION_COLOR: Record<VerificationStatus, 'success' | 'warning' | 'danger'> = {
+  VERIFIED: 'success',
+  PENDING: 'warning',
+  REJECTED: 'danger',
 };
 
 export const CHOSEN_MODALITY_LABEL: Record<ChosenModality, string> = {

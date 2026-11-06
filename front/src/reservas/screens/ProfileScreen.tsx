@@ -4,7 +4,13 @@ import { useEffect, useState } from 'react';
 import { ApiError } from '../../api';
 import { getTutor } from '../api';
 import { ActionBar, Avatar, FlowAlert, Loading, ScreenHeader } from '../components/ui';
-import { MODALITY_LABEL, formatCop } from '../format';
+import {
+  MODALITY_LABEL,
+  VERIFICATION_COLOR,
+  VERIFICATION_LABEL,
+  formatCop,
+  formatFullDate,
+} from '../format';
 import type { TutorProfile } from '../types';
 
 /** Resumen mínimo del tutor antes de reservar. El perfil público completo es SCRUM-15. */
@@ -41,8 +47,18 @@ export function ProfileScreen({
           <Card>
             <Card.Content className="flex flex-row items-center gap-4">
               <Avatar name={tutor.fullName} size="lg" />
-              <div className="flex flex-col gap-1">
-                <h2 className="text-xl font-bold text-foreground">{tutor.fullName}</h2>
+              <div className="flex flex-col items-start gap-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h2 className="text-xl font-bold text-foreground">{tutor.fullName}</h2>
+                  {/* El estado de verificación es lo primero que mira el estudiante. */}
+                  <Chip
+                    size="sm"
+                    variant="soft"
+                    color={VERIFICATION_COLOR[tutor.verificationStatus]}
+                  >
+                    {VERIFICATION_LABEL[tutor.verificationStatus]}
+                  </Chip>
+                </div>
                 <p className="flex items-center gap-1 text-sm text-muted">
                   {tutor.hasReviews ? (
                     <>
@@ -155,13 +171,18 @@ export function ProfileScreen({
                 <ul className="flex flex-col gap-3">
                   {tutor.recentReviews.map((review, index) => (
                     <li key={`${review.createdAt}-${index}`} className="flex flex-col gap-1 text-sm">
-                      <div className="flex items-center gap-2 text-muted">
+                      <div className="flex flex-wrap items-center gap-2 text-muted">
                         <span aria-label={`${review.rating} de 5 estrellas`}>
                           {'★'.repeat(review.rating)}
                         </span>
                         <span>{review.subject}</span>
+                        {/*
+                         * Calificación, materia y fecha; del estudiante no sale
+                         * nada, que es lo que pide la reseña verificada.
+                         */}
+                        <time dateTime={review.createdAt}>{formatFullDate(review.createdAt)}</time>
                       </div>
-                      <p className="text-foreground">“{review.comment}”</p>
+                      {review.comment && <p className="text-foreground">“{review.comment}”</p>}
                     </li>
                   ))}
                 </ul>
