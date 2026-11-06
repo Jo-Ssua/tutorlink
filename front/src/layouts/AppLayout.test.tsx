@@ -34,7 +34,7 @@ function navDestinations(): string[] {
 }
 
 describe('navegación de la aplicación', () => {
-  it('ofrece al estudiante sus dos secciones y ninguna de otro rol', async () => {
+  it('ofrece al estudiante sus secciones y ninguna de otro rol', async () => {
     withStoredSession('STUDENT');
     stubApi({
       '/auth/me': { data: sessionUser('STUDENT') },
@@ -47,6 +47,7 @@ describe('navegación de la aplicación', () => {
     const destinations = new Set(navDestinations());
     expect(destinations).toContain('/app/reservar');
     expect(destinations).toContain('/app/calificaciones');
+    expect(destinations).toContain('/app/postular');
     expect(destinations).not.toContain('/app/tutor');
     expect(destinations).not.toContain('/app/admin');
   });

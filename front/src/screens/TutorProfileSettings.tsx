@@ -361,11 +361,11 @@ export function TutorProfileSettings() {
           )}
 
           <TextField fullWidth value={evidenceUrl} onChange={setEvidenceUrl} isDisabled={!verified}>
-            <Label>Enlace de evidencia (opcional)</Label>
+            <Label>Enlace de evidencia</Label>
             <Input type="url" maxLength={500} placeholder="https://..." />
             <Description>
-              Las materias nuevas se validan contra el catálogo oficial y quedan pendientes de
-              aprobación.
+              Adjunta la evidencia de aprobación. Sin ese enlace, o sin la nota y el semestre, la
+              materia no se puede registrar.
             </Description>
           </TextField>
         </Card.Content>

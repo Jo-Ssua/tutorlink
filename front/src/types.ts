@@ -40,6 +40,7 @@ export interface CatalogSubject {
   id: string;
   code: string;
   name: string;
+  programId: string;
   program: { name: string };
 }
 
@@ -214,6 +215,56 @@ export interface Program {
   name: string;
   code: string;
   faculty: { id: string; name: string; code: string };
+}
+
+export interface OwnTutorApplicationSubject {
+  id: string;
+  status: VerificationStatus;
+  evidenceUrl: string | null;
+  grade: number | null;
+  approvedSemester: number | null;
+  rejectionReason: string | null;
+  subject: { id: string; code: string; name: string };
+}
+
+/** Postulación del estudiante autenticado, distinta del listado de administración. */
+export interface OwnTutorApplication {
+  verificationStatus: VerificationStatus;
+  rejectionReason: string | null;
+  bio: string | null;
+  experienceYears: number;
+  hourlyRate: number;
+  modalities: Modality[];
+  subjects: OwnTutorApplicationSubject[];
+}
+
+export interface AcademicProfileSnapshot {
+  studentCode: string | null;
+  semester: number | null;
+  program: Program | null;
+}
+
+export interface OwnTutorApplicationSnapshot {
+  academicProfile: AcademicProfileSnapshot | null;
+  application: OwnTutorApplication | null;
+}
+
+export interface ApplyTutorSubjectPayload {
+  subjectId: string;
+  evidenceUrl?: string;
+  grade?: number;
+  approvedSemester?: number;
+}
+
+export interface ApplyTutorPayload {
+  programId: string;
+  semester: number;
+  studentCode: string;
+  bio?: string;
+  experienceYears: number;
+  hourlyRate: number;
+  modalities: Modality[];
+  subjects: ApplyTutorSubjectPayload[];
 }
 
 export interface RegisterPayload {

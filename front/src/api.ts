@@ -12,6 +12,9 @@ import type {
   Program,
   RegisterPayload,
   SessionUser,
+  ApplyTutorPayload,
+  OwnTutorApplication,
+  OwnTutorApplicationSnapshot,
   TutorApplicationList,
   TutorOwnProfile,
   VerificationPending,
@@ -248,6 +251,19 @@ export async function resendVerification(email: string): Promise<VerificationPen
 
 export async function getPrograms(): Promise<Program[]> {
   return request<Program[]>('/catalog/programs');
+}
+
+export async function getOwnTutorApplication(): Promise<OwnTutorApplicationSnapshot> {
+  return request<OwnTutorApplicationSnapshot>('/tutor/application');
+}
+
+export async function submitTutorApplication(
+  payload: ApplyTutorPayload,
+): Promise<OwnTutorApplication> {
+  return request<OwnTutorApplication>('/tutor/apply', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
 }
 
 /** Confirma contra la API que la sesión guardada sigue siendo válida. */

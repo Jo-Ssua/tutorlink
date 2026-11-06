@@ -12,10 +12,12 @@ import {
   IsNumber,
   IsOptional,
   IsString,
+  IsUrl,
   IsUUID,
   Max,
   MaxLength,
   Min,
+  MinLength,
   ValidateNested,
 } from 'class-validator';
 import { PaginationDto } from '../../common/dto/pagination.dto';
@@ -23,17 +25,48 @@ import { PaginationDto } from '../../common/dto/pagination.dto';
 const trim = ({ value }: { value: unknown }): unknown =>
   typeof value === 'string' ? value.trim() : value;
 
+const blankToUndefined = ({ value }: { value: unknown }): unknown => {
+  if (typeof value !== 'string') return value;
+  const trimmed = value.trim();
+  return trimmed.length === 0 ? undefined : trimmed;
+};
+
 export class TutorSubjectApplicationDto {
   @ApiProperty({ example: '4ef1f1f7-1f2f-4d4e-9f1e-2f3a4b5c6d7e' })
   @IsUUID()
   subjectId: string;
 
-  @ApiPropertyOptional({ example: 'https://storage.tutorlink.edu/evidencias/notas.pdf' })
+  @ApiPropertyOptional({
+    example: 'https://storage.tutorlink.edu/evidencias/notas.pdf',
+    description: 'Evidencia de aprobacion. Obligatoria si no se envian nota y semestre.',
+  })
   @IsOptional()
-  @Transform(trim)
-  @IsString()
+  @Transform(blankToUndefined)
+  @IsUrl({ require_protocol: true })
   @MaxLength(500)
   evidenceUrl?: string;
+
+  @ApiPropertyOptional({
+    example: 4.5,
+    description: 'Nota con la que se aprobo la materia. Obligatoria junto con el semestre si no hay evidencia.',
+  })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(0)
+  @Max(5)
+  grade?: number;
+
+  @ApiPropertyOptional({
+    example: 4,
+    description: 'Semestre en el que se aprobo la materia.',
+  })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(20)
+  approvedSemester?: number;
 }
 
 export class ApplyTutorDto {
@@ -83,6 +116,24 @@ export class ApplyTutorDto {
   @ArrayMaxSize(20)
   @IsUUID('4', { each: true })
   professorIds?: string[];
+
+  @ApiProperty({ example: '20000000-0000-4000-8000-000000000001' })
+  @IsUUID()
+  programId: string;
+
+  @ApiProperty({ example: 5 })
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(20)
+  semester: number;
+
+  @ApiProperty({ example: '20231002' })
+  @Transform(trim)
+  @IsString()
+  @MinLength(4)
+  @MaxLength(30)
+  studentCode: string;
 }
 
 export class UpdateTutorProfileDto {
@@ -138,10 +189,26 @@ export class AddTutorSubjectDto {
 
   @ApiPropertyOptional()
   @IsOptional()
-  @Transform(trim)
-  @IsString()
+  @Transform(blankToUndefined)
+  @IsUrl({ require_protocol: true })
   @MaxLength(500)
   evidenceUrl?: string;
+
+  @ApiPropertyOptional({ example: 4.3 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(0)
+  @Max(5)
+  grade?: number;
+
+  @ApiPropertyOptional({ example: 6 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(20)
+  approvedSemester?: number;
 }
 
 export class CreateAvailabilityDto {
