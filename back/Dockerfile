@@ -6,7 +6,7 @@ RUN apk add --no-cache openssl
 COPY package.json package-lock.json ./
 RUN npm ci
 
-COPY tsconfig.json tsconfig.build.json tsconfig.seed.json nest-cli.json ./
+COPY tsconfig.json tsconfig.build.json tsconfig.seed.json nest-cli.json prisma.config.ts ./
 COPY prisma ./prisma
 COPY src ./src
 

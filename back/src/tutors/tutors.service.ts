@@ -509,10 +509,13 @@ export class TutorsService {
         ...(query.modality ? { modality: query.modality } : {}),
       },
       orderBy: { startAt: 'asc' },
-      take: 100,
+      take: 200,
     });
 
-    return slots.map((slot) => this.mapSlot(slot));
+    return slots.map((slot) => ({
+      ...this.mapSlot(slot),
+      durationMinutes: Math.round((slot.endAt.getTime() - slot.startAt.getTime()) / 60_000),
+    }));
   }
 
   async createAvailability(user: AuthenticatedUser, dto: CreateAvailabilityDto) {
@@ -555,6 +558,7 @@ export class TutorsService {
     slotId: string,
     dto: UpdateAvailabilityDto,
   ) {
+    await this.requireVerifiedProfile(user.id);
     const slot = await this.requireOwnedSlot(user.id, slotId);
     await this.assertSlotHasNoHistory(slot.id);
 
@@ -594,6 +598,7 @@ export class TutorsService {
   }
 
   async deleteAvailability(user: AuthenticatedUser, slotId: string) {
+    await this.requireVerifiedProfile(user.id);
     const slot = await this.requireOwnedSlot(user.id, slotId);
     const [bookingCount, proposalCount] = await this.prisma.$transaction([
       this.prisma.booking.count({ where: { slotId: slot.id } }),

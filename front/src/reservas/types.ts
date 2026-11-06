@@ -9,20 +9,21 @@ export type BookingStatus =
   | 'CANCELLED'
   | 'COMPLETED';
 
-export interface ApiSuccess<T> {
-  success: true;
-  data: T;
+export type TutorSortBy = 'RELEVANCE' | 'RATING' | 'PRICE' | 'AVAILABILITY';
+
+export interface TutorSearchFilters {
+  q?: string;
+  minRating?: number;
+  maxRate?: number;
+  modality?: Modality;
+  subjectId?: string;
+  sortBy?: TutorSortBy;
 }
 
-export interface ApiErrorBody {
-  success: false;
-  error: {
-    code?: string;
-    message?: string;
-    details?: string[];
-    fields?: Record<string, string[]>;
-  };
-}
+/*
+ * `ApiSuccess` y `ApiErrorBody` vivían aquí duplicados; ahora están en
+ * `src/types.ts` porque el transporte es el `request()` compartido.
+ */
 
 export interface Pagination {
   page: number;
@@ -55,34 +56,6 @@ export interface TutorList {
   pagination: Pagination;
 }
 
-export interface FacultyOption {
-  id: string;
-  name: string;
-  code: string;
-}
-
-export interface ProgramOption {
-  id: string;
-  name: string;
-  code: string;
-  facultyId: string;
-}
-
-export interface SubjectOption {
-  id: string;
-  name: string;
-  code: string;
-  programId: string;
-  program: { name: string; facultyId: string };
-}
-
-export interface ProfessorOption {
-  id: string;
-  fullName: string;
-  programId: string;
-  program: { facultyId: string };
-}
-
 export interface TutorSubjectDetail extends SubjectRef {
   program: string;
   faculty: string;
@@ -102,6 +75,7 @@ export interface AvailabilitySlot {
   endAt: string;
   modality: Modality;
   status: 'AVAILABLE' | 'HELD' | 'RESERVED' | 'BLOCKED';
+  durationMinutes?: number;
 }
 
 export interface TutorProfile {
