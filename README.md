@@ -60,7 +60,7 @@ tutorlink/
 - **Backend** (`back/`): prefijo `api/v1`, documentación Swagger en `/docs`, validación con `class-validator`, autenticación JWT con roles (`STUDENT`, `TUTOR`, `ADMIN`). Detalle en [`back/README.md`](back/README.md) y [`back/README_ENDPOINTS.md`](back/README_ENDPOINTS.md).
 - **Frontend** (`front/`): una sola aplicación con dos secciones en la barra superior (visibles para estudiantes):
   - **Calificaciones** (`src/`): calificar sesiones completadas. Ver [`front/README.md`](front/README.md).
-  - **Reservar tutoría** (`src/reservas/`): tutor, calendario de disponibilidad, detalles de la reserva y confirmación. Con estilos propios acotados a su sección.
+  - **Reservar** (`src/reservas/`): tutor, calendario de disponibilidad, detalles de la reserva y confirmación. Con estilos propios acotados a su sección.
 
 ## Requisitos
 - Node.js 24 o superior y npm 11
@@ -113,7 +113,7 @@ Todos usan la contraseña `TutorLink123*`.
 | Tutor (Diego) | `diego.tutor@universidad.edu.co` |
 | Tutora (Sofía) | `sofia.tutor@universidad.edu.co` |
 | Administrador | `admin@universidad.edu.co` |
-Para ver el flujo de reserva: inicia sesión como estudiante, entra a **Reservar tutoría**, elige un tutor y un horario, completa los datos y confirma.
+Para ver el flujo de reserva: inicia sesión como estudiante, entra a **Reservar**, elige un tutor y un horario, completa los datos y confirma.
 Para probar cambios de agenda del tutor: inicia sesión como tutor y entra a **Mi oferta**, donde se editan biografía, tarifa, modalidades, materias y horarios. La pantalla del estudiante muestra los horarios nuevos en segundos.
 
 ### 4. Pruebas y verificación
@@ -129,6 +129,8 @@ npm run typecheck              # verificación de TypeScript
 npm run build                  # typecheck + build de producción
 ```
 El front no tiene ESLint configurado; su red de seguridad son Vitest y el typecheck.
+
+Para recorrer las 12 historias de usuario a mano, paso a paso y con los datos del seed, está [`docs/GUION-DEMO-SPRINT-1.md`](docs/GUION-DEMO-SPRINT-1.md). Ese guion usa `npm run demo:pending-review` (en `back/`), que deja una sesión completada sin calificar para poder probar el envío de una reseña.
 
 ## Solución de problemas
 | Síntoma | Causa y solución |

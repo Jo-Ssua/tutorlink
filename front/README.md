@@ -50,14 +50,14 @@ docker compose up -d --build
 
 ### 2. Datos demo para esta HU
 
-El seed general deja todas las reservas completadas ya calificadas. Para probar el envío de una calificación nueva, ejecuta el seed aislado de esta HU:
+El seed general deja todas las reservas completadas ya calificadas, así que «Pendientes por calificar» aparece vacío. Para probar el envío de una calificación nueva:
 
 ```bash
 cd back
-npx ts-node --transpile-only scripts/seed-rating-demo.ts
+npm run demo:pending-review
 ```
 
-Este script es idempotente y solo crea/actualiza una franja, una reserva completada, su pago simulado y elimina la reseña de **esa reserva demo** para dejarla pendiente. No modifica las reservas ni reseñas de las demás historias.
+El script borra la reseña de la sesión de Cálculo I entre María y Sofía y recalcula el promedio de la tutora igual que lo hace la API. Es idempotente y no toca las reservas ni las reseñas de las demás historias; `npm run prisma:seed` lo deshace.
 
 Cuentas del seed. La pantalla de inicio de sesión no las muestra: enumerar
 cuentas y roles antes de autenticar le da a cualquiera medio trabajo hecho.
@@ -184,6 +184,11 @@ Las pruebas viven junto al código que cubren (`*.test.ts` y `*.test.tsx`).
 
 ## Verificación manual sugerida
 
+El recorrido completo de las 12 historias, con los datos exactos del seed y el
+orden en que conviene grabarlo, está en
+[`docs/GUION-DEMO-SPRINT-1.md`](../docs/GUION-DEMO-SPRINT-1.md). Lo de abajo es
+el subconjunto de las historias que vive en esta carpeta.
+
 ### Registro y sesión
 
 1. Abrir `/registro` y escribir un correo que no sea institucional: la pantalla informa el formato aceptado antes de llamar a la API.
@@ -206,7 +211,7 @@ Las pruebas viven junto al código que cubren (`*.test.ts` y `*.test.tsx`).
 
 ## Reservar tutorías (SCRUM-20 y SCRUM-21)
 
-La pestaña **Reservar tutoría** (visible para estudiantes en la barra superior) vive en `src/reservas/` y usa la misma sesión que el resto de la app. Sus estilos están acotados a la clase `.rsv` para no afectar otras secciones.
+La pestaña **Reservar** (visible para estudiantes en la barra superior) vive en `src/reservas/` y usa la misma sesión que el resto de la app. Sus estilos están acotados a la clase `.rsv` para no afectar otras secciones.
 
 - **SCRUM-20 · Consulta de disponibilidad:** calendario mensual con las franjas libres del tutor, filtro por modalidad y actualización automática cada 15 s.
 - **SCRUM-21 · Creación de una reserva:** materia, tema o necesidad, modalidad, fecha y hora; resumen de costo; la reserva queda *pendiente de respuesta* del tutor.
