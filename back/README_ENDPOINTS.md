@@ -244,6 +244,8 @@ Ejemplo:
 GET /api/v1/tutors?subjectId=30000000-0000-4000-8000-000000000001&modality=VIRTUAL&sortBy=AVAILABILITY
 ```
 
+Cada resultado incluye nombre, `verificationStatus`, materias verificadas, `hourlyRate`, `averageRating`, `reviewCount`, `nextAvailableAt` e `isAvailable`, para comparar tutores sin abrir el perfil.
+
 ---
 
 ## Tutor autenticado

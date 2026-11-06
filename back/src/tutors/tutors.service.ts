@@ -52,6 +52,7 @@ interface TutorCardData {
   hourlyRate: Prisma.Decimal;
   averageRating: number;
   reviewCount: number;
+  verificationStatus: VerificationStatus;
   modalities: Modality[];
   isActive: boolean;
   user: { fullName: string };
@@ -1361,6 +1362,7 @@ export class TutorsService {
       averageRating: roundMoney(tutor.averageRating),
       reviewCount: tutor.reviewCount,
       hasReviews: tutor.reviewCount > 0,
+      verificationStatus: tutor.verificationStatus,
       subjects: tutor.subjects.map((link) => ({
         id: link.subject.id,
         code: link.subject.code,
