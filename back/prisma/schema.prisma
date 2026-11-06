@@ -4,7 +4,6 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 enum Role {
@@ -114,9 +113,13 @@ model User {
   status                     UserStatus @default(PENDING_VERIFICATION)
   emailVerificationCodeHash  String?
   emailVerificationExpiresAt DateTime?
+  emailVerificationAttempts  Int       @default(0)
   verificationSentAt         DateTime?
   emailVerifiedAt            DateTime?
   refreshTokenHash           String?
+  tokenVersion               Int       @default(0)
+  failedLoginAttempts        Int       @default(0)
+  lockedUntil                DateTime?
   lastLoginAt                DateTime?
   createdAt                  DateTime  @default(now())
   updatedAt                  DateTime  @updatedAt
@@ -256,15 +259,17 @@ model SubjectProfessor {
 }
 
 model TutorSubject {
-  id              String             @id @default(uuid()) @db.Uuid
-  tutorId         String             @db.Uuid
-  subjectId       String             @db.Uuid
-  evidenceUrl     String?
-  status          VerificationStatus @default(PENDING)
-  rejectionReason String?
-  verifiedAt      DateTime?
-  createdAt       DateTime           @default(now())
-  updatedAt       DateTime           @updatedAt
+  id               String             @id @default(uuid()) @db.Uuid
+  tutorId          String             @db.Uuid
+  subjectId        String             @db.Uuid
+  evidenceUrl      String?
+  grade            Decimal?           @db.Decimal(3, 2)
+  approvedSemester Int?
+  status           VerificationStatus @default(PENDING)
+  rejectionReason  String?
+  verifiedAt       DateTime?
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
 
   tutor   TutorProfile @relation(fields: [tutorId], references: [id], onDelete: Cascade)
   subject Subject      @relation(fields: [subjectId], references: [id])

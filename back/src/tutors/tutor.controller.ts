@@ -42,6 +42,13 @@ export class TutorController {
     return this.tutorsService.apply(user, dto);
   }
 
+  @Get('application')
+  @Roles(Role.STUDENT, Role.TUTOR)
+  @ApiOperation({ summary: 'Consultar el perfil academico y la postulacion propia' })
+  application(@CurrentUser() user: AuthenticatedUser) {
+    return this.tutorsService.getApplication(user);
+  }
+
   @Get('profile')
   @Roles(Role.TUTOR)
   @ApiOperation({ summary: 'Consultar el perfil propio del tutor' })

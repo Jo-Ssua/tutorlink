@@ -28,6 +28,7 @@ import {
 import { money, roundMoney } from '../common/utils/money';
 import { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { assertSubjectCanBeRegistered } from './subject-evidence';
 import {
   AddTutorSubjectDto,
   ApplyTutorDto,
@@ -51,6 +52,7 @@ interface TutorCardData {
   hourlyRate: Prisma.Decimal;
   averageRating: number;
   reviewCount: number;
+  verificationStatus: VerificationStatus;
   modalities: Modality[];
   isActive: boolean;
   user: { fullName: string };
@@ -87,15 +89,52 @@ export class TutorsService {
     }
 
     const subjectIds = [...new Set(dto.subjects.map((subject) => subject.subjectId))];
-    const subjects = await this.prisma.subject.findMany({
+    const catalogSubjects = await this.prisma.subject.findMany({
       where: { id: { in: subjectIds } },
-      select: { id: true },
+      select: { id: true, code: true, name: true },
     });
 
-    if (subjects.length !== subjectIds.length) {
+    if (catalogSubjects.length !== subjectIds.length) {
       throw new NotFoundException({
         code: 'SUBJECT_NOT_FOUND',
-        message: 'Una o mas materias no pertenecen al pensum oficial',
+        message:
+          'Una o mas materias no pertenecen al catalogo oficial y no se pueden registrar',
+      });
+    }
+
+    const subjectLabels = new Map(
+      catalogSubjects.map((subject) => [subject.id, `${subject.code} ${subject.name}`]),
+    );
+    const preparedSubjects = [
+      ...new Map(dto.subjects.map((subject) => [subject.subjectId, subject])).values(),
+    ].map((subject) => ({
+      subjectId: subject.subjectId,
+      ...assertSubjectCanBeRegistered(
+        subject,
+        subjectLabels.get(subject.subjectId) ?? 'Materia',
+      ),
+    }));
+
+    const program = await this.prisma.program.findUnique({
+      where: { id: dto.programId },
+      include: { faculty: true },
+    });
+
+    if (!program) {
+      throw new NotFoundException({
+        code: 'PROGRAM_NOT_FOUND',
+        message: 'El programa academico no pertenece al catalogo oficial',
+      });
+    }
+
+    const codeOwner = await this.prisma.studentProfile.findUnique({
+      where: { studentCode: dto.studentCode },
+    });
+
+    if (codeOwner && codeOwner.userId !== user.id) {
+      throw new ConflictException({
+        code: 'STUDENT_CODE_TAKEN',
+        message: 'Ese codigo de estudiante ya esta registrado en otra cuenta',
       });
     }
 
@@ -127,6 +166,21 @@ export class TutorsService {
     }
 
     const profile = await this.prisma.$transaction(async (tx) => {
+      await tx.studentProfile.upsert({
+        where: { userId: user.id },
+        create: {
+          userId: user.id,
+          studentCode: dto.studentCode,
+          semester: dto.semester,
+          programId: dto.programId,
+        },
+        update: {
+          studentCode: dto.studentCode,
+          semester: dto.semester,
+          programId: dto.programId,
+        },
+      });
+
       const tutorProfile = await tx.tutorProfile.upsert({
         where: { userId: user.id },
         create: {
@@ -150,10 +204,12 @@ export class TutorsService {
 
       await tx.tutorSubject.deleteMany({ where: { tutorId: tutorProfile.id } });
       await tx.tutorSubject.createMany({
-        data: dto.subjects.map((subject) => ({
+        data: preparedSubjects.map((subject) => ({
           tutorId: tutorProfile.id,
           subjectId: subject.subjectId,
           evidenceUrl: subject.evidenceUrl,
+          grade: subject.grade,
+          approvedSemester: subject.approvedSemester,
           status: VerificationStatus.PENDING,
         })),
       });
@@ -193,7 +249,7 @@ export class TutorsService {
         userId: admin.id,
         type: 'TUTOR_APPLICATION_SUBMITTED' as const,
         title: 'Nueva postulacion de tutor',
-        message: `${user.fullName} envio una postulacion con ${dto.subjects.length} materia(s).`,
+        message: `${user.fullName} envio una postulacion con ${preparedSubjects.length} materia(s).`,
         data: { tutorProfileId: profile.id, userId: user.id },
       })),
       {
@@ -205,7 +261,53 @@ export class TutorsService {
       },
     ]);
 
-    return this.mapOwnProfile(profile);
+    return {
+      ...this.mapOwnProfile(profile),
+      academicProfile: {
+        studentCode: dto.studentCode,
+        semester: dto.semester,
+        program,
+      },
+    };
+  }
+
+  async getApplication(user: AuthenticatedUser) {
+    const account = await this.prisma.user.findUnique({
+      where: { id: user.id },
+      include: {
+        studentProfile: { include: { program: { include: { faculty: true } } } },
+        tutorProfile: {
+          include: {
+            user: true,
+            subjects: { include: { subject: true } },
+            professors: { include: { professor: true } },
+            availability: {
+              where: { status: SlotStatus.AVAILABLE, startAt: { gt: new Date() } },
+              orderBy: { startAt: 'asc' },
+              take: 10,
+            },
+          },
+        },
+      },
+    });
+
+    if (!account) {
+      throw new NotFoundException({
+        code: 'USER_NOT_FOUND',
+        message: 'Usuario no encontrado',
+      });
+    }
+
+    return {
+      academicProfile: account.studentProfile
+        ? {
+            studentCode: account.studentProfile.studentCode,
+            semester: account.studentProfile.semester,
+            program: account.studentProfile.program,
+          }
+        : null,
+      application: account.tutorProfile ? this.mapOwnProfile(account.tutorProfile) : null,
+    };
   }
 
   async getOwnProfile(user: AuthenticatedUser) {
@@ -266,9 +368,11 @@ export class TutorsService {
     if (!subject) {
       throw new NotFoundException({
         code: 'SUBJECT_NOT_FOUND',
-        message: 'La materia no pertenece al pensum oficial',
+        message: 'La materia no pertenece al catalogo oficial y no se puede registrar',
       });
     }
+
+    const prepared = assertSubjectCanBeRegistered(dto, `${subject.code} ${subject.name}`);
 
     const existing = await this.prisma.tutorSubject.findUnique({
       where: { tutorId_subjectId: { tutorId: profile.id, subjectId: dto.subjectId } },
@@ -286,11 +390,15 @@ export class TutorsService {
       create: {
         tutorId: profile.id,
         subjectId: dto.subjectId,
-        evidenceUrl: dto.evidenceUrl,
+        evidenceUrl: prepared.evidenceUrl,
+        grade: prepared.grade,
+        approvedSemester: prepared.approvedSemester,
         status: VerificationStatus.PENDING,
       },
       update: {
-        evidenceUrl: dto.evidenceUrl,
+        evidenceUrl: prepared.evidenceUrl,
+        grade: prepared.grade,
+        approvedSemester: prepared.approvedSemester,
         status: VerificationStatus.PENDING,
         rejectionReason: null,
         verifiedAt: null,
@@ -402,10 +510,13 @@ export class TutorsService {
         ...(query.modality ? { modality: query.modality } : {}),
       },
       orderBy: { startAt: 'asc' },
-      take: 100,
+      take: 200,
     });
 
-    return slots.map((slot) => this.mapSlot(slot));
+    return slots.map((slot) => ({
+      ...this.mapSlot(slot),
+      durationMinutes: Math.round((slot.endAt.getTime() - slot.startAt.getTime()) / 60_000),
+    }));
   }
 
   async createAvailability(user: AuthenticatedUser, dto: CreateAvailabilityDto) {
@@ -448,6 +559,7 @@ export class TutorsService {
     slotId: string,
     dto: UpdateAvailabilityDto,
   ) {
+    await this.requireVerifiedProfile(user.id);
     const slot = await this.requireOwnedSlot(user.id, slotId);
     await this.assertSlotHasNoHistory(slot.id);
 
@@ -487,6 +599,7 @@ export class TutorsService {
   }
 
   async deleteAvailability(user: AuthenticatedUser, slotId: string) {
+    await this.requireVerifiedProfile(user.id);
     const slot = await this.requireOwnedSlot(user.id, slotId);
     const [bookingCount, proposalCount] = await this.prisma.$transaction([
       this.prisma.booking.count({ where: { slotId: slot.id } }),
@@ -1249,6 +1362,7 @@ export class TutorsService {
       averageRating: roundMoney(tutor.averageRating),
       reviewCount: tutor.reviewCount,
       hasReviews: tutor.reviewCount > 0,
+      verificationStatus: tutor.verificationStatus,
       subjects: tutor.subjects.map((link) => ({
         id: link.subject.id,
         code: link.subject.code,
@@ -1282,6 +1396,8 @@ export class TutorsService {
       id: string;
       status: VerificationStatus;
       evidenceUrl: string | null;
+      grade: Prisma.Decimal | null;
+      approvedSemester: number | null;
       rejectionReason: string | null;
       subject: { id: string; code: string; name: string };
     }>;
@@ -1315,6 +1431,8 @@ export class TutorsService {
         id: link.id,
         status: link.status,
         evidenceUrl: link.evidenceUrl,
+        grade: link.grade === null ? null : money(link.grade),
+        approvedSemester: link.approvedSemester,
         rejectionReason: link.rejectionReason,
         subject: link.subject,
       })),

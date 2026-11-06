@@ -1,6 +1,8 @@
 import type { LoginResult, SessionUser } from './types';
 
-const SESSION_KEY = 'tutorlink.scrum17.session';
+/** Clave en localStorage. Se exporta para poder escuchar el evento `storage`
+ *  y mantener la sesion sincronizada entre pestanas. */
+export const SESSION_KEY = 'tutorlink.scrum17.session';
 
 export interface StoredSession {
   accessToken: string;
