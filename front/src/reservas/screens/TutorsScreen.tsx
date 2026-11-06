@@ -4,8 +4,14 @@ import { useEffect, useState, type FormEvent } from 'react';
 import { ApiError } from '../../api';
 import { listTutors } from '../api';
 import { Avatar, FlowAlert, Loading, ScreenHeader } from '../components/ui';
-import { formatCop } from '../format';
-import type { Modality, TutorCard, TutorSearchFilters, TutorSortBy } from '../types';
+import { formatCop, formatLongDate, formatTime } from '../format';
+import type {
+  Modality,
+  TutorCard,
+  TutorSearchFilters,
+  TutorSortBy,
+  VerificationStatus,
+} from '../types';
 
 const SORT_OPTIONS: Array<{ value: TutorSortBy; label: string }> = [
   { value: 'RELEVANCE', label: 'Más relevantes' },
@@ -33,6 +39,18 @@ const MODALITY_OPTIONS: Array<{ value: typeof ANY | Modality; label: string }> =
   { value: 'IN_PERSON', label: 'Presencial' },
   { value: 'HYBRID', label: 'Híbrida' },
 ];
+
+const VERIFICATION_LABEL: Record<VerificationStatus, string> = {
+  VERIFIED: 'Verificado',
+  PENDING: 'Pendiente',
+  REJECTED: 'Rechazado',
+};
+
+const VERIFICATION_COLOR: Record<VerificationStatus, 'success' | 'warning' | 'danger'> = {
+  VERIFIED: 'success',
+  PENDING: 'warning',
+  REJECTED: 'danger',
+};
 
 const EMPTY_DRAFT = {
   q: '',
@@ -216,33 +234,81 @@ export function TutorsScreen({ onSelect }: { onSelect: (tutorId: string) => void
                 onClick={() => onSelect(tutor.id)}
               >
                 <Card className="transition-colors hover:border-accent">
-                  <Card.Content className="flex flex-col gap-2">
-                    {/* A 375 px las materias no caben junto al nombre: van debajo. */}
-                    <div className="flex flex-row flex-nowrap items-center gap-3">
+                  <Card.Content className="flex flex-col gap-3">
+                    <div className="flex flex-row flex-nowrap items-start gap-3">
                       <Avatar name={tutor.fullName} />
-                      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-                        <strong className="text-foreground">{tutor.fullName}</strong>
-                        <span className="flex items-center gap-1 text-sm text-muted">
-                          {tutor.reviewCount > 0 ? (
-                            <>
-                              <StarIcon aria-hidden="true" weight="fill" className="text-warning" />
-                              {tutor.averageRating.toFixed(1)} · {tutor.reviewCount} reseñas
-                            </>
-                          ) : (
-                            'Perfil nuevo · sin reseñas'
-                          )}
-                        </span>
+                      <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <strong className="text-foreground">{tutor.fullName}</strong>
+                          <Chip
+                            size="sm"
+                            variant="soft"
+                            color={VERIFICATION_COLOR[tutor.verificationStatus]}
+                          >
+                            {VERIFICATION_LABEL[tutor.verificationStatus]}
+                          </Chip>
+                        </div>
+                        {tutor.reviewCount > 0 ? (
+                          <span className="flex flex-wrap items-center gap-1 text-sm text-muted">
+                            <StarIcon aria-hidden="true" weight="fill" className="text-warning" />
+                            <span className="font-semibold text-foreground">
+                              {tutor.averageRating.toFixed(1)}
+                            </span>
+                            <span>
+                              calificación promedio · {tutor.reviewCount}{' '}
+                              {tutor.reviewCount === 1 ? 'reseña' : 'reseñas'}
+                            </span>
+                          </span>
+                        ) : (
+                          <Chip size="sm" variant="soft">
+                            Sin calificaciones
+                          </Chip>
+                        )}
                       </div>
-                      <CaretRightIcon aria-hidden="true" className="shrink-0 text-muted" />
+                      <CaretRightIcon aria-hidden="true" className="mt-1 shrink-0 text-muted" />
                     </div>
-                    <div className="flex flex-row items-start justify-between gap-3">
-                      <span className="min-w-0 text-sm text-muted">
-                        {tutor.subjects.map((subject) => subject.name).join(' · ')}
-                      </span>
-                      <Chip className="shrink-0" size="sm" variant="soft" color="accent">
-                        {formatCop(tutor.hourlyRate)}/h
-                      </Chip>
+
+                    <div className="flex flex-wrap gap-2" aria-label="Materias">
+                      {tutor.subjects.length > 0 ? (
+                        tutor.subjects.map((subject) => (
+                          <Chip key={subject.id} size="sm" variant="soft" color="accent">
+                            {subject.name}
+                          </Chip>
+                        ))
+                      ) : (
+                        <span className="text-sm text-muted">Sin materias verificadas</span>
+                      )}
                     </div>
+
+                    <dl className="grid gap-2 border-t border-border pt-3 text-sm sm:grid-cols-2">
+                      <div className="flex flex-col gap-1">
+                        <dt className="text-xs font-semibold tracking-wide text-muted uppercase">
+                          Tarifa
+                        </dt>
+                        <dd>
+                          <Chip size="sm" variant="soft" color="accent">
+                            {formatCop(tutor.hourlyRate)}/h
+                          </Chip>
+                        </dd>
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <dt className="text-xs font-semibold tracking-wide text-muted uppercase">
+                          Disponibilidad
+                        </dt>
+                        <dd>
+                          {tutor.isAvailable && tutor.nextAvailableAt ? (
+                            <span className="text-foreground">
+                              {formatLongDate(tutor.nextAvailableAt)} ·{' '}
+                              {formatTime(tutor.nextAvailableAt)}
+                            </span>
+                          ) : (
+                            <Chip size="sm" variant="soft" color="warning">
+                              Sin disponibilidad
+                            </Chip>
+                          )}
+                        </dd>
+                      </div>
+                    </dl>
                   </Card.Content>
                 </Card>
               </button>

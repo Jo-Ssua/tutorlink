@@ -46,6 +46,7 @@ export interface TutorCard {
   modalities: Modality[];
   averageRating: number;
   reviewCount: number;
+  verificationStatus: VerificationStatus;
   subjects: SubjectRef[];
   nextAvailableAt: string | null;
   isAvailable: boolean;
