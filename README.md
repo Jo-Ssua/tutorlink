@@ -114,7 +114,7 @@ Todos usan la contraseña `TutorLink123*`.
 | Tutora (Sofía) | `sofia.tutor@universidad.edu.co` |
 | Administrador | `admin@universidad.edu.co` |
 Para ver el flujo de reserva: inicia sesión como estudiante, entra a **Reservar tutoría**, elige un tutor y un horario, completa los datos y confirma.
-Para probar cambios de agenda del tutor (aún sin pantalla propia), usa Swagger: haz login con un tutor, pulsa **Authorize** y llama a `POST /tutor/availability` o `PATCH /tutor/availability/:id`. La pantalla del estudiante muestra los horarios nuevos en segundos.
+Para probar cambios de agenda del tutor: inicia sesión como tutor y entra a **Mi oferta**, donde se editan biografía, tarifa, modalidades, materias y horarios. La pantalla del estudiante muestra los horarios nuevos en segundos.
 
 ### 4. Pruebas y verificación
 ```bash
@@ -124,10 +124,12 @@ npm test -- --runInBand        # pruebas unitarias
 npm run test:e2e               # requiere PostgreSQL con migraciones
 node scripts/smoke-test.mjs    # requiere la API corriendo con datos seed
 cd ../front
-npm run lint
 npm test                       # pruebas con Vitest
+npm run typecheck              # verificación de TypeScript
 npm run build                  # typecheck + build de producción
 ```
+El front no tiene ESLint configurado; su red de seguridad son Vitest y el typecheck.
+
 ## Solución de problemas
 | Síntoma | Causa y solución |
 | --- | --- |

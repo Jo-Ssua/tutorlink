@@ -92,8 +92,10 @@ La variable `VITE_API_URL` apunta por defecto a `http://localhost:3000/api/v1`. 
 | `/registro` | Pública | Registro con correo institucional |
 | `/verificar` | Pública | Código de 6 dígitos; el enlace del correo llega con `?email=&code=` y verifica solo |
 | `/app/calificaciones` | Estudiante | Calificación de sesiones completadas |
-| `/app/reservar` | Estudiante | Disponibilidad y creación de reservas |
+| `/app/reservar` | Estudiante | Búsqueda de tutores, disponibilidad y creación de reservas |
+| `/app/postular` | Estudiante | Postulación como tutor con materias del pensum oficial |
 | `/app/tutor` | Tutor | Sesiones del tutor e ingresos |
+| `/app/oferta` | Tutor | Biografía, tarifa, modalidades, materias y horarios |
 | `/app/admin` | Administrador | Métricas y postulaciones pendientes |
 
 `/` redirige a la pantalla inicial del rol. Entrar a una sección de otro rol devuelve a la propia con un aviso; sin sesión, a `/login`.
@@ -108,7 +110,8 @@ La variable `VITE_API_URL` apunta por defecto a `http://localhost:3000/api/v1`. 
 | `npm run typecheck` | Verificación de TypeScript |
 | `npm test` | Pruebas con Vitest y Testing Library |
 | `npm run test:watch` | Pruebas en modo watch |
-| `npm run lint` | Ejecuta ESLint |
+
+No hay ESLint configurado en el front: la verificación estática es `npm run typecheck`.
 
 ## Endpoints usados
 
@@ -122,9 +125,19 @@ La variable `VITE_API_URL` apunta por defecto a `http://localhost:3000/api/v1`. 
 | `GET` | `/auth/me` | Revalidar la sesión guardada al abrir la app |
 | `POST` | `/auth/refresh` | Renovar el access token ante un 401 |
 | `POST` | `/auth/logout` | Cerrar la sesión |
+| `GET` | `/catalog/faculties`, `/catalog/subjects`, `/catalog/professors` | Opciones encadenadas de la búsqueda contextual |
+| `GET` | `/tutors?facultyId=&programId=&subjectId=&professorId=&sortBy=` | Búsqueda y orden de tutores |
+| `GET` | `/tutors/:id` | Perfil público: verificación, materias, tarifa, modalidades y reseñas |
+| `GET` | `/tutors/:id/availability` | Franjas libres del tutor, refrescadas cada 15 s |
+| `POST` | `/bookings/quote` | Costo de la franja antes de confirmar |
+| `POST` | `/bookings` | Crear la reserva con materia, tema, modalidad y franja |
 | `GET` | `/bookings/my?status=COMPLETED&page=1&limit=20` | Sesiones completadas del estudiante |
 | `POST` | `/bookings/:id/review` | Registrar la calificación y actualizar el promedio del tutor |
 | `GET` | `/bookings/tutor` | Sesiones del tutor autenticado |
+| `POST` | `/tutor/apply` | Postulación como tutor con evidencia por materia |
+| `GET`/`PATCH` | `/tutor/profile` | Oferta del tutor: biografía, tarifa y modalidades |
+| `POST`/`DELETE` | `/tutor/subjects` | Materias de la oferta, pendientes de validación |
+| `GET`/`POST`/`PATCH`/`DELETE` | `/tutor/availability` | Horarios que ofrece el tutor |
 | `GET` | `/admin/stats` | Métricas de la plataforma |
 | `GET` | `/admin/tutor-applications?status=PENDING` | Postulaciones por revisar |
 
