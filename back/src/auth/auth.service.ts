@@ -143,17 +143,29 @@ export class AuthService {
       },
     });
 
-    if (!user || !user.emailVerificationCodeHash) {
+    if (!user) {
       throw new BadRequestException({
         code: 'INVALID_VERIFICATION_CODE',
         message: 'El codigo de verificacion no es valido',
       });
     }
 
+    /*
+     * La cuenta verificada va primero: al activarla se borra el hash del
+     * codigo, asi que comprobar el hash antes dejaba este 409 inalcanzable y
+     * repetir el codigo respondia INVALID_VERIFICATION_CODE.
+     */
     if (user.status === UserStatus.ACTIVE) {
       throw new ConflictException({
         code: 'EMAIL_ALREADY_VERIFIED',
         message: 'La cuenta ya se encuentra verificada',
+      });
+    }
+
+    if (!user.emailVerificationCodeHash) {
+      throw new BadRequestException({
+        code: 'INVALID_VERIFICATION_CODE',
+        message: 'El codigo de verificacion no es valido',
       });
     }
 
