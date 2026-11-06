@@ -2,12 +2,22 @@ import { Button, Card, Chip, Input, Label, ListBox, Select, TextField } from '@h
 import { CaretRightIcon, StarIcon } from '@phosphor-icons/react';
 import { useEffect, useState, type FormEvent } from 'react';
 import { ApiError } from '../../api';
-import { listTutors } from '../api';
+import {
+  listFaculties,
+  listProfessors,
+  listPrograms,
+  listSubjects,
+  listTutors,
+} from '../api';
 import { Avatar, FlowAlert, Loading, ScreenHeader } from '../components/ui';
 import { formatCop, formatLongDate, formatTime } from '../format';
 import type {
+  FacultyOption,
   Modality,
-  TutorCard,
+  ProfessorOption,
+  ProgramOption,
+  SubjectOption,
+  TutorList,
   TutorSearchFilters,
   TutorSortBy,
   VerificationStatus,
@@ -33,8 +43,8 @@ const RATING_OPTIONS = [
   { value: '4.5', label: '4.5 o más' },
 ];
 
-const MODALITY_OPTIONS: Array<{ value: typeof ANY | Modality; label: string }> = [
-  { value: 'ANY', label: 'Todas' },
+const MODALITY_OPTIONS = [
+  { value: ANY, label: 'Todas' },
   { value: 'VIRTUAL', label: 'Virtual' },
   { value: 'IN_PERSON', label: 'Presencial' },
   { value: 'HYBRID', label: 'Híbrida' },
@@ -55,27 +65,73 @@ const VERIFICATION_COLOR: Record<VerificationStatus, 'success' | 'warning' | 'da
 const EMPTY_DRAFT = {
   q: '',
   maxRate: '',
-  minRating: ANY as typeof ANY | string,
-  modality: ANY as typeof ANY | Modality,
+  minRating: ANY,
+  modality: ANY,
+  facultyId: ANY,
+  programId: ANY,
+  subjectId: ANY,
+  professorId: ANY,
 };
+
+type Draft = typeof EMPTY_DRAFT;
+
+/** `ANY` es ausencia de filtro, así que no viaja a la API. */
+function chosen(value: string): string | undefined {
+  return value === ANY ? undefined : value;
+}
+
+interface FilterSelectProps {
+  label: string;
+  value: string;
+  options: Array<{ value: string; label: string }>;
+  onChange: (value: string) => void;
+}
+
+function FilterSelect({ label, value, options, onChange }: FilterSelectProps) {
+  return (
+    <Select fullWidth value={value} onChange={(next) => onChange(String(next ?? ANY))}>
+      <Label>{label}</Label>
+      <Select.Trigger>
+        <Select.Value />
+        <Select.Indicator />
+      </Select.Trigger>
+      <Select.Popover>
+        <ListBox>
+          {options.map((option) => (
+            <ListBox.Item key={option.value} id={option.value} textValue={option.label}>
+              {option.label}
+              <ListBox.ItemIndicator />
+            </ListBox.Item>
+          ))}
+        </ListBox>
+      </Select.Popover>
+    </Select>
+  );
+}
 
 /** Entrada al flujo de reserva, con la búsqueda y el orden de SCRUM-11/12/13. */
 export function TutorsScreen({ onSelect }: { onSelect: (tutorId: string) => void }) {
-  const [tutors, setTutors] = useState<TutorCard[] | null>(null);
+  const [result, setResult] = useState<TutorList | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [filters, setFilters] = useState<TutorSearchFilters>({
     sortBy: 'RELEVANCE',
   });
-  const [draft, setDraft] = useState(EMPTY_DRAFT);
+  const [draft, setDraft] = useState<Draft>(EMPTY_DRAFT);
+
+  const [faculties, setFaculties] = useState<FacultyOption[]>([]);
+  const [programs, setPrograms] = useState<ProgramOption[]>([]);
+  const [subjects, setSubjects] = useState<SubjectOption[]>([]);
+  const [professors, setProfessors] = useState<ProfessorOption[]>([]);
+  const [catalogError, setCatalogError] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
     setLoading(true);
     setError(null);
     listTutors(filters)
-      .then((result) => {
-        if (active) setTutors(result.items);
+      .then((response) => {
+        if (active) setResult(response);
       })
       .catch((caught: unknown) => {
         if (!active) return;
@@ -91,6 +147,98 @@ export function TutorsScreen({ onSelect }: { onSelect: (tutorId: string) => void
     };
   }, [filters]);
 
+  /*
+   * El catálogo se consulta en cascada: cada lista hereda lo ya elegido más
+   * arriba, de modo que un programa siempre pertenece a la facultad escogida y
+   * un profesor siempre dicta la materia escogida. La API ya hace ese filtro,
+   * así que aquí basta con volver a pedir la lista cuando cambia su ámbito.
+   */
+  useEffect(() => {
+    let active = true;
+    listFaculties()
+      .then((options) => {
+        if (active) setFaculties(options);
+      })
+      .catch(() => {
+        if (active) setCatalogError('No se pudo cargar el catálogo académico.');
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const facultyScope = chosen(draft.facultyId);
+  const programScope = chosen(draft.programId);
+  const subjectScope = chosen(draft.subjectId);
+
+  useEffect(() => {
+    let active = true;
+    listPrograms(facultyScope)
+      .then((options) => {
+        if (active) setPrograms(options);
+      })
+      .catch(() => {
+        if (active) setCatalogError('No se pudieron cargar los programas.');
+      });
+    return () => {
+      active = false;
+    };
+  }, [facultyScope]);
+
+  useEffect(() => {
+    let active = true;
+    listSubjects({ facultyId: facultyScope, programId: programScope })
+      .then((options) => {
+        if (active) setSubjects(options);
+      })
+      .catch(() => {
+        if (active) setCatalogError('No se pudieron cargar las materias.');
+      });
+    return () => {
+      active = false;
+    };
+  }, [facultyScope, programScope]);
+
+  useEffect(() => {
+    let active = true;
+    listProfessors({
+      facultyId: facultyScope,
+      programId: programScope,
+      subjectId: subjectScope,
+    })
+      .then((options) => {
+        if (active) setProfessors(options);
+      })
+      .catch(() => {
+        if (active) setCatalogError('No se pudieron cargar los profesores.');
+      });
+    return () => {
+      active = false;
+    };
+  }, [facultyScope, programScope, subjectScope]);
+
+  /*
+   * Al cambiar un nivel se limpian los de abajo: dejar puesta una materia de
+   * otro programa daría una búsqueda que nunca encuentra a nadie.
+   */
+  function chooseFaculty(facultyId: string) {
+    setDraft((current) => ({
+      ...current,
+      facultyId,
+      programId: ANY,
+      subjectId: ANY,
+      professorId: ANY,
+    }));
+  }
+
+  function chooseProgram(programId: string) {
+    setDraft((current) => ({ ...current, programId, subjectId: ANY, professorId: ANY }));
+  }
+
+  function chooseSubject(subjectId: string) {
+    setDraft((current) => ({ ...current, subjectId, professorId: ANY }));
+  }
+
   function applyFilters(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setFilters((current) => ({
@@ -98,7 +246,11 @@ export function TutorsScreen({ onSelect }: { onSelect: (tutorId: string) => void
       q: draft.q.trim() || undefined,
       maxRate: draft.maxRate ? Number(draft.maxRate) : undefined,
       minRating: draft.minRating === ANY ? undefined : Number(draft.minRating),
-      modality: draft.modality === ANY ? undefined : draft.modality,
+      modality: chosen(draft.modality) as Modality | undefined,
+      facultyId: chosen(draft.facultyId),
+      programId: chosen(draft.programId),
+      subjectId: chosen(draft.subjectId),
+      professorId: chosen(draft.professorId),
     }));
   }
 
@@ -107,8 +259,38 @@ export function TutorsScreen({ onSelect }: { onSelect: (tutorId: string) => void
     setFilters((current) => ({ sortBy: current.sortBy }));
   }
 
+  const facultyOptions = [
+    { value: ANY, label: 'Todas las facultades' },
+    ...faculties.map((faculty) => ({ value: faculty.id, label: faculty.name })),
+  ];
+  const programOptions = [
+    { value: ANY, label: 'Todos los programas' },
+    ...programs.map((program) => ({ value: program.id, label: program.name })),
+  ];
+  const subjectOptions = [
+    { value: ANY, label: 'Todas las materias' },
+    ...subjects.map((subject) => ({
+      value: subject.id,
+      label: `${subject.code} · ${subject.name}`,
+    })),
+  ];
+  const professorOptions = [
+    { value: ANY, label: 'Todos los profesores' },
+    ...professors.map((professor) => ({ value: professor.id, label: professor.fullName })),
+  ];
+
+  const tutors = result?.items ?? null;
   // Si hay filtros puestos, el vacío significa «nada coincide», no «no hay tutores».
-  const filtered = Boolean(filters.q || filters.maxRate || filters.minRating || filters.modality);
+  const filtered = Boolean(
+    filters.q ||
+      filters.maxRate ||
+      filters.minRating ||
+      filters.modality ||
+      filters.facultyId ||
+      filters.programId ||
+      filters.subjectId ||
+      filters.professorId,
+  );
 
   return (
     <>
@@ -127,6 +309,33 @@ export function TutorsScreen({ onSelect }: { onSelect: (tutorId: string) => void
             </TextField>
 
             <div className="grid gap-4 sm:grid-cols-2">
+              <FilterSelect
+                label="Facultad"
+                value={draft.facultyId}
+                options={facultyOptions}
+                onChange={chooseFaculty}
+              />
+              <FilterSelect
+                label="Programa"
+                value={draft.programId}
+                options={programOptions}
+                onChange={chooseProgram}
+              />
+              <FilterSelect
+                label="Materia"
+                value={draft.subjectId}
+                options={subjectOptions}
+                onChange={chooseSubject}
+              />
+              <FilterSelect
+                label="Profesor"
+                value={draft.professorId}
+                options={professorOptions}
+                onChange={(professorId) => setDraft({ ...draft, professorId })}
+              />
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
               <TextField
                 fullWidth
                 value={draft.maxRate}
@@ -136,52 +345,22 @@ export function TutorsScreen({ onSelect }: { onSelect: (tutorId: string) => void
                 <Input type="number" min={0} inputMode="numeric" placeholder="Sin límite" />
               </TextField>
 
-              <Select
-                fullWidth
+              <FilterSelect
+                label="Calificación mínima"
                 value={draft.minRating}
-                onChange={(value) => setDraft({ ...draft, minRating: String(value ?? ANY) })}
-              >
-                <Label>Calificación mínima</Label>
-                <Select.Trigger>
-                  <Select.Value />
-                  <Select.Indicator />
-                </Select.Trigger>
-                <Select.Popover>
-                  <ListBox>
-                    {RATING_OPTIONS.map((option) => (
-                      <ListBox.Item key={option.value} id={option.value} textValue={option.label}>
-                        {option.label}
-                        <ListBox.ItemIndicator />
-                      </ListBox.Item>
-                    ))}
-                  </ListBox>
-                </Select.Popover>
-              </Select>
+                options={RATING_OPTIONS}
+                onChange={(minRating) => setDraft({ ...draft, minRating })}
+              />
             </div>
 
-            <Select
-              fullWidth
+            <FilterSelect
+              label="Modalidad"
               value={draft.modality}
-              onChange={(value) =>
-                setDraft({ ...draft, modality: (value ?? ANY) as typeof ANY | Modality })
-              }
-            >
-              <Label>Modalidad</Label>
-              <Select.Trigger>
-                <Select.Value />
-                <Select.Indicator />
-              </Select.Trigger>
-              <Select.Popover>
-                <ListBox>
-                  {MODALITY_OPTIONS.map((option) => (
-                    <ListBox.Item key={option.value} id={option.value} textValue={option.label}>
-                      {option.label}
-                      <ListBox.ItemIndicator />
-                    </ListBox.Item>
-                  ))}
-                </ListBox>
-              </Select.Popover>
-            </Select>
+              options={MODALITY_OPTIONS}
+              onChange={(modality) => setDraft({ ...draft, modality })}
+            />
+
+            {catalogError && <p className="text-sm text-warning">{catalogError}</p>}
 
             <div className="flex flex-wrap items-center gap-2">
               <Button type="submit">Aplicar filtros</Button>
@@ -317,7 +496,12 @@ export function TutorsScreen({ onSelect }: { onSelect: (tutorId: string) => void
         {!loading && tutors?.length === 0 && (
           <li className="text-sm text-muted">
             {filtered
-              ? 'No hay tutores que coincidan. Prueba ajustar los filtros.'
+              ? /*
+                 * La API explica qué hacer sin resultados, y ahí es donde entra
+                 * StudyMatch; el texto propio es solo el respaldo.
+                 */
+                (result?.suggestions ??
+                'No hay tutores que coincidan. Ajusta los filtros o usa StudyMatch para una búsqueda urgente.')
               : 'Aún no hay tutores verificados.'}
           </li>
         )}
