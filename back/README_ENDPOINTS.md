@@ -198,10 +198,11 @@ GET /api/v1/tutors?subjectId=30000000-0000-4000-8000-000000000001&modality=VIRTU
 
 | Metodo | Ruta | Rol | Descripcion | Body / Query |
 | --- | --- | --- | --- | --- |
-| POST | `/tutor/apply` | `STUDENT`, `TUTOR` | Postularse como tutor | `bio?`, `experienceYears`, `hourlyRate`, `modalities`, `subjects`, `professorIds?` |
+| POST | `/tutor/apply` | `STUDENT`, `TUTOR` | Postularse como tutor | `programId`, `semester`, `studentCode`, `bio?`, `experienceYears`, `hourlyRate`, `modalities`, `subjects`, `professorIds?` |
+| GET | `/tutor/application` | `STUDENT`, `TUTOR` | Consultar perfil academico y postulacion propia | - |
 | GET | `/tutor/profile` | `TUTOR` | Consultar perfil propio | - |
 | PATCH | `/tutor/profile` | `TUTOR` | Actualizar perfil | `bio?`, `experienceYears?`, `hourlyRate?`, `modalities?`, `maxWeeklySessions?`, `isActive?` |
-| POST | `/tutor/subjects` | `TUTOR` | Agregar materia | `subjectId`, `evidenceUrl?` |
+| POST | `/tutor/subjects` | `TUTOR` | Agregar materia | `subjectId`, `evidenceUrl?` o `grade` + `approvedSemester` |
 | DELETE | `/tutor/subjects/:id` | `TUTOR` | Eliminar materia | - |
 | GET | `/tutor/availability` | `TUTOR` | Listar disponibilidad | `from?`, `to?`, `modality?` |
 | POST | `/tutor/availability` | `TUTOR` | Crear franja | `startAt`, `endAt`, `modality` |
@@ -216,6 +217,9 @@ Estructura de `subjects` en `POST /tutor/apply`:
 
 ```json
 {
+  "programId": "20000000-0000-4000-8000-000000000001",
+  "semester": 5,
+  "studentCode": "20231002",
   "bio": "Tutora de estructuras de datos",
   "experienceYears": 2,
   "hourlyRate": 45000,
@@ -224,11 +228,18 @@ Estructura de `subjects` en `POST /tutor/apply`:
     {
       "subjectId": "30000000-0000-4000-8000-000000000001",
       "evidenceUrl": "https://ejemplo.com/evidencia.pdf"
+    },
+    {
+      "subjectId": "30000000-0000-4000-8000-000000000002",
+      "grade": 4.5,
+      "approvedSemester": 4
     }
   ],
   "professorIds": ["40000000-0000-4000-8000-000000000001"]
 }
 ```
+
+Cada materia debe incluir `evidenceUrl` o, en su lugar, `grade` (minimo 3.0) y `approvedSemester`. Una materia que no exista en el catalogo oficial responde `404 SUBJECT_NOT_FOUND` y no se registra. `programId` tambien debe existir en el catalogo.
 
 ---
 

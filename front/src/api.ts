@@ -96,7 +96,7 @@ async function refreshSession(): Promise<boolean> {
   return true;
 }
 
-async function request<T>(path: string, init: RequestInit = {}, canRetry = true): Promise<T> {
+export async function request<T>(path: string, init: RequestInit = {}, canRetry = true): Promise<T> {
   const session = loadSession();
   const response = await rawRequest(path, {
     ...init,

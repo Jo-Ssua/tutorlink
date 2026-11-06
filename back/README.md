@@ -174,6 +174,7 @@ Filtros de `/tutors`: `facultyId`, `programId`, `subjectId`, `professorId`, `min
 | Metodo | Ruta | Descripcion |
 | --- | --- | --- |
 | POST | `/api/v1/tutor/apply` | Postulacion como tutor |
+| GET | `/api/v1/tutor/application` | Perfil academico y postulacion propia |
 | GET, PATCH | `/api/v1/tutor/profile` | Consultar/actualizar perfil |
 | POST | `/api/v1/tutor/subjects` | Agregar materia |
 | DELETE | `/api/v1/tutor/subjects/:id` | Eliminar materia |

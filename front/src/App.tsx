@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ApiError, createBookingReview, getMyCompletedBookings, logoutRemote } from './api';
 import { LoginCard } from './components/LoginCard';
+import { PostulacionApp } from './postulacion/PostulacionApp';
 import { ReservasApp } from './reservas/ReservasApp';
 import { SessionCard } from './components/SessionCard';
 import { toFriendlyError, type FriendlyError } from './errors';
@@ -21,7 +22,7 @@ export default function App() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [listError, setListError] = useState<FriendlyError | null>(null);
   const [toast, setToast] = useState<ToastState | null>(null);
-  const [view, setView] = useState<'ratings' | 'reservas'>('ratings');
+  const [view, setView] = useState<'ratings' | 'reservas' | 'postulacion'>('ratings');
 
   const isStudent = user?.role === 'STUDENT';
 
@@ -70,6 +71,11 @@ export default function App() {
     () => bookings.filter((booking) => booking.status === 'COMPLETED' && booking.review),
     [bookings],
   );
+
+  const handleSessionExpired = useCallback(() => {
+    clearSession();
+    setUser(null);
+  }, []);
 
   async function handleLogout() {
     await logoutRemote();
@@ -160,6 +166,13 @@ export default function App() {
               >
                 Reservar tutoría
               </button>
+              <button
+                type="button"
+                className={`button button--small ${view === 'postulacion' ? 'button--primary' : 'button--ghost'}`}
+                onClick={() => setView('postulacion')}
+              >
+                Postularme
+              </button>
             </nav>
           )}
           <div className="topbar__user">
@@ -174,6 +187,10 @@ export default function App() {
       {isStudent && view === 'reservas' ? (
         <main className="dashboard">
           <ReservasApp />
+        </main>
+      ) : isStudent && view === 'postulacion' ? (
+        <main className="dashboard">
+          <PostulacionApp onSessionExpired={handleSessionExpired} />
         </main>
       ) : !isStudent ? (
         <main className="dashboard">

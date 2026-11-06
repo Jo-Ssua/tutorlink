@@ -16,6 +16,10 @@ const DEMO_USERS = [
     label: 'Juan · sesiones por calificar',
     email: 'juan.estudiante@estudiantes.universidad.edu.co',
   },
+  {
+    label: 'Pedro · postulación pendiente',
+    email: 'pedro.tutor@universidad.edu.co',
+  },
 ];
 
 const DEMO_PASSWORD = 'TutorLink123*';
@@ -52,6 +56,7 @@ export function LoginCard({ onLoggedIn }: LoginCardProps) {
         <ul className="auth__points">
           <li>Solo sesiones completadas pueden calificarse.</li>
           <li>Una reseña por sesión, sin duplicados.</li>
+          <li>También puedes postularte como tutor con materias del pensum oficial.</li>
           <li>El promedio del tutor se actualiza al enviar.</li>
         </ul>
       </section>
