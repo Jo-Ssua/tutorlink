@@ -264,7 +264,9 @@ Cada resultado incluye nombre, `verificationStatus`, materias verificadas, `hour
 | DELETE | `/tutor/availability/:id` | `TUTOR` | Eliminar franja | - |
 | GET | `/tutor/dashboard` | `TUTOR` | Dashboard de solicitudes | - |
 | GET | `/tutor/requests` | `TUTOR` | Solicitudes recibidas | `status?`, `page?`, `limit?` |
-| GET | `/tutor/history` | `TUTOR` | Historial de sesiones | `from?`, `to?`, `subjectId?`, `status?`, `page?`, `limit?` |
+| GET | `/tutor/history` | `TUTOR` | Historial de sesiones: fecha, estudiante anonimizado, materia, estado, tarifa y reseña. Solo lectura | `from?`, `to?` (`AAAA-MM-DD` incluye todo ese día), `subjectId?`, `status?`, `page?`, `limit?` |
+| GET | `/tutor/history/summary` | `TUTOR` | Trayectoria: sesiones por estado, calificación promedio, distribución y materias | - |
+| GET | `/tutor/history/:id` | `TUTOR` | Detalle de una sesión con su calificación y comentario | `id` UUID |
 | GET | `/tutor/earnings` | `TUTOR` | Ingresos simulados | `from?`, `to?`, `groupBy?` (`DAY`, `WEEK`, `MONTH`) |
 
 Estructura de `subjects` en `POST /tutor/apply`:
