@@ -15,6 +15,7 @@ import { TutorHome } from './screens/TutorHome';
 import { TutorProfileSettings } from './screens/TutorProfileSettings';
 import { VerifyScreen } from './screens/VerifyScreen';
 import { NotificationsScreen } from './screens/NotificationsScreen';
+import { StudyMatchScreen } from './screens/StudyMatchScreen';
 
 export function AppRoutes() {
   return (
@@ -35,6 +36,7 @@ export function AppRoutes() {
           <Route element={<RoleRoute roles={['STUDENT']} />}>
             <Route path="calificaciones" element={<RatingsScreen />} />
             <Route path="reservar" element={<ReservasApp />} />
+            <Route path="emergencia" element={<StudyMatchScreen />} />
             <Route path="postular" element={<TutorApplicationScreen />} />
           </Route>
 

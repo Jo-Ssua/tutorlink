@@ -22,6 +22,13 @@ import type {
 } from './types';
 import type { AvailabilitySlot } from './reservas/types';
 import type { NotificationList } from './notifications/types';
+import type {
+  StudyMatchActionResult,
+  StudyMatchRequest,
+  StudyMatchRequestPage,
+  StudyMatchTutorProposal,
+  StudyMatchUrgency,
+} from './studymatch/types';
 
 const API_URL = (import.meta.env.VITE_API_URL ?? 'http://localhost:3000/api/v1').replace(
   /\/$/,
@@ -391,6 +398,61 @@ export async function markNotificationRead(notificationId: string): Promise<void
 
 export async function markAllNotificationsRead(): Promise<void> {
   await request('/notifications/read-all', { method: 'PATCH' });
+}
+
+export async function createStudyMatchRequest(payload: {
+  subjectId: string;
+  topic: string;
+  description?: string;
+  urgency: StudyMatchUrgency;
+  modality: Modality;
+  availableFrom: string;
+  availableTo: string;
+}): Promise<StudyMatchActionResult> {
+  return request<StudyMatchActionResult>('/studymatch/requests', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function getMyStudyMatchRequests(
+  page = 1,
+  limit = 20,
+): Promise<StudyMatchRequestPage> {
+  return request<StudyMatchRequestPage>(`/studymatch/requests/my?page=${page}&limit=${limit}`);
+}
+
+export async function getStudyMatchRequest(requestId: string): Promise<StudyMatchRequest> {
+  return request<StudyMatchRequest>(`/studymatch/requests/${requestId}`);
+}
+
+export async function confirmStudyMatchProposal(
+  proposalId: string,
+  payload: { accept: boolean; simulatePayment?: boolean; rejectionReason?: string },
+): Promise<StudyMatchActionResult> {
+  return request<StudyMatchActionResult>(`/studymatch/proposals/${proposalId}/confirm`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function getPendingStudyMatchProposals(): Promise<{
+  items: StudyMatchTutorProposal[];
+  total: number;
+}> {
+  return request<{ items: StudyMatchTutorProposal[]; total: number }>(
+    '/studymatch/proposals/pending',
+  );
+}
+
+export async function respondToStudyMatchProposal(
+  proposalId: string,
+  payload: { action: 'ACCEPT' | 'REJECT'; reason?: string },
+): Promise<{ proposal: StudyMatchTutorProposal; next?: unknown; message: string }> {
+  return request(`/studymatch/proposals/${proposalId}/respond`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
 }
 
 export { API_URL };
