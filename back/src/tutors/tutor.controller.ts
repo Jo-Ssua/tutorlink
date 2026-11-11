@@ -22,7 +22,6 @@ import {
   AvailabilityQueryDto,
   CreateAvailabilityDto,
   EarningsQueryDto,
-  TutorHistoryQueryDto,
   TutorRequestsQueryDto,
   UpdateAvailabilityDto,
   UpdateTutorProfileDto,
@@ -144,16 +143,6 @@ export class TutorController {
     @Query() query: TutorRequestsQueryDto,
   ) {
     return this.tutorsService.requests(user, query);
-  }
-
-  @Get('history')
-  @Roles(Role.TUTOR)
-  @ApiOperation({ summary: 'Consultar historial de tutorias con estudiantes anonimizados' })
-  history(
-    @CurrentUser() user: AuthenticatedUser,
-    @Query() query: TutorHistoryQueryDto,
-  ) {
-    return this.tutorsService.history(user, query);
   }
 
   @Get('earnings')

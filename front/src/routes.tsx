@@ -11,6 +11,7 @@ import { LoginScreen } from './screens/LoginScreen';
 import { RatingsScreen } from './screens/RatingsScreen';
 import { RegisterScreen } from './screens/RegisterScreen';
 import { TutorApplicationScreen } from './screens/TutorApplicationScreen';
+import { TutorHistory } from './screens/TutorHistory';
 import { TutorHome } from './screens/TutorHome';
 import { TutorProfileSettings } from './screens/TutorProfileSettings';
 import { VerifyScreen } from './screens/VerifyScreen';
@@ -39,6 +40,7 @@ export function AppRoutes() {
           <Route element={<RoleRoute roles={['TUTOR']} />}>
             <Route path="tutor" element={<TutorHome />} />
             <Route path="oferta" element={<TutorProfileSettings />} />
+            <Route path="historial" element={<TutorHistory />} />
           </Route>
 
           <Route element={<RoleRoute roles={['ADMIN']} />}>

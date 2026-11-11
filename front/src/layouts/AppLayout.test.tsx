@@ -63,7 +63,7 @@ describe('navegación de la aplicación', () => {
     await waitForHeading(/Hola, Ana/);
 
     const destinations = new Set(navDestinations());
-    expect(destinations).toEqual(new Set(['/app/tutor', '/app/oferta']));
+    expect(destinations).toEqual(new Set(['/app/tutor', '/app/oferta', '/app/historial']));
   });
 
   it('no le muestra al admin las secciones de los demás roles', async () => {

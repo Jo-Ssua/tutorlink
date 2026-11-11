@@ -1,6 +1,7 @@
 import {
   CalendarBlankIcon,
   ChartBarIcon,
+  ClockCounterClockwiseIcon,
   GraduationCapIcon,
   MagnifyingGlassIcon,
   StarIcon,
@@ -37,6 +38,7 @@ const NAV_BY_ROLE: Record<Role, NavItem[]> = {
   TUTOR: [
     { to: '/app/tutor', label: 'Mis sesiones', Icon: CalendarBlankIcon },
     { to: '/app/oferta', label: 'Mi oferta', Icon: UserGearIcon },
+    { to: '/app/historial', label: 'Historial', Icon: ClockCounterClockwiseIcon },
   ],
   ADMIN: [{ to: '/app/admin', label: 'Administración', Icon: ChartBarIcon }],
 };
