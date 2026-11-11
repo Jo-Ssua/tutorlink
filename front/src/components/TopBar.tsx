@@ -1,6 +1,7 @@
 import { Button } from '@heroui/react';
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
+import { NotificationBell } from './NotificationBell';
 import { navItemsFor } from '../layouts/navigation';
 
 /**
@@ -59,6 +60,7 @@ export function TopBar() {
         )}
 
         <div className="ml-auto flex items-center gap-3">
+          <NotificationBell />
           {user && (
             <span className="hidden text-sm text-muted sm:inline">{user.fullName}</span>
           )}

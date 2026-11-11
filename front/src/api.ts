@@ -21,6 +21,7 @@ import type {
   VerifyEmailResult,
 } from './types';
 import type { AvailabilitySlot } from './reservas/types';
+import type { NotificationList } from './notifications/types';
 
 const API_URL = (import.meta.env.VITE_API_URL ?? 'http://localhost:3000/api/v1').replace(
   /\/$/,
@@ -364,6 +365,32 @@ export async function getAdminStats(): Promise<AdminStats> {
 
 export async function getPendingTutorApplications(): Promise<TutorApplicationList> {
   return request<TutorApplicationList>('/admin/tutor-applications?status=PENDING&limit=20');
+}
+
+export async function getNotifications(
+  page = 1,
+  limit = 30,
+  unreadOnly = false,
+): Promise<NotificationList> {
+  const query = new URLSearchParams({
+    page: String(page),
+    limit: String(limit),
+  });
+  if (unreadOnly) query.set('unreadOnly', 'true');
+  return request<NotificationList>(`/notifications?${query.toString()}`);
+}
+
+export async function getUnreadNotificationCount(): Promise<number> {
+  const result = await request<{ unreadCount: number }>('/notifications/unread-count');
+  return result.unreadCount;
+}
+
+export async function markNotificationRead(notificationId: string): Promise<void> {
+  await request(`/notifications/${notificationId}/read`, { method: 'PATCH' });
+}
+
+export async function markAllNotificationsRead(): Promise<void> {
+  await request('/notifications/read-all', { method: 'PATCH' });
 }
 
 export { API_URL };
