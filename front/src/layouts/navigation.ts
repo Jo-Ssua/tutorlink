@@ -3,6 +3,7 @@ import {
   ChartBarIcon,
   ClockCounterClockwiseIcon,
   GraduationCapIcon,
+  LightningIcon,
   MagnifyingGlassIcon,
   StarIcon,
   UserGearIcon,
@@ -32,6 +33,7 @@ export interface NavItem {
 const NAV_BY_ROLE: Record<Role, NavItem[]> = {
   STUDENT: [
     { to: '/app/reservar', label: 'Reservar', Icon: MagnifyingGlassIcon },
+    { to: '/app/emergencia', label: 'Emergencia', Icon: LightningIcon },
     { to: '/app/calificaciones', label: 'Calificaciones', Icon: StarIcon },
     { to: '/app/postular', label: 'Postularme', Icon: GraduationCapIcon },
   ],
