@@ -264,6 +264,7 @@ Cada resultado incluye nombre, `verificationStatus`, materias verificadas, `hour
 | DELETE | `/tutor/availability/:id` | `TUTOR` | Eliminar franja | - |
 | GET | `/tutor/dashboard` | `TUTOR` | Dashboard de solicitudes | - |
 | GET | `/tutor/requests` | `TUTOR` | Solicitudes recibidas | `status?`, `page?`, `limit?` |
+| GET | `/tutor/requests/dashboard` | `TUTOR` | Panel de solicitudes en una sola llamada: totales y hasta 20 solicitudes `pending`, `accepted`, `rejected` y `upcoming` (confirmadas por venir). Cada una trae materia, tema, fecha, modalidad, tarifa, estudiante anonimizado y `canRespond`. Solo lectura | - |
 | GET | `/tutor/history` | `TUTOR` | Historial de sesiones: fecha, estudiante anonimizado, materia, estado, tarifa y reseña. Solo lectura | `from?`, `to?` (`AAAA-MM-DD` incluye todo ese día), `subjectId?`, `status?`, `page?`, `limit?` |
 | GET | `/tutor/history/summary` | `TUTOR` | Trayectoria: sesiones por estado, calificación promedio, distribución y materias | - |
 | GET | `/tutor/history/:id` | `TUTOR` | Detalle de una sesión con su calificación y comentario | `id` UUID |
@@ -308,8 +309,8 @@ Cada materia debe incluir `evidenceUrl` o, en su lugar, `grade` (minimo 3.0) y `
 | GET | `/bookings/my` | `STUDENT` | Reservas del estudiante | `status?`, `from?`, `to?`, `page?`, `limit?` |
 | GET | `/bookings/tutor` | `TUTOR` | Reservas del tutor | `status?`, `from?`, `to?`, `page?`, `limit?` |
 | GET | `/bookings/:id` | Autenticado | Detalle de reserva | - |
-| POST | `/bookings/:id/accept` | `TUTOR` | Aceptar reserva | - |
-| POST | `/bookings/:id/reject` | `TUTOR` | Rechazar reserva | `reason?` |
+| POST | `/bookings/:id/accept` | `TUTOR` | Aceptar reserva pendiente y notificar al estudiante. `409 BOOKING_EXPIRED` si la hora ya pasó; `409 INVALID_BOOKING_STATE` si ya fue respondida | - |
+| POST | `/bookings/:id/reject` | `TUTOR` | Rechazar reserva pendiente, liberar la franja y notificar al estudiante. `409 INVALID_BOOKING_STATE` si ya fue respondida | `reason?` |
 | POST | `/bookings/:id/payment` | `STUDENT` | Pago simulado | `simulatePayment: true` |
 | POST | `/bookings/:id/cancel` | Autenticado | Cancelar y reembolsar | `reason?` |
 | POST | `/bookings/:id/complete` | `TUTOR`, `ADMIN` | Finalizar sesion | - |

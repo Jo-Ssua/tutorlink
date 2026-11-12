@@ -8,6 +8,8 @@ Alcance implementado:
 - **Registro con correo institucional (SCRUM-6 y SCRUM-7):** formulario con validación del dominio aceptado, indicador de fuerza de contraseña, verificación con código de 6 dígitos, cuenta atrás de 15 minutos, reenvío con espera de 60 s y activación directa desde el enlace del correo.
 - **Calificación posterior a una sesión (SCRUM-17):** sesiones `COMPLETED` del estudiante, separadas entre pendientes por calificar y ya calificadas, con estrellas obligatorias de 1 a 5, comentario opcional y publicación anónima.
 - **Reserva de tutorías (SCRUM-20 y SCRUM-21):** consulta de disponibilidad y creación de la reserva.
+- **Solicitudes del tutor:** panel con pendientes, aceptadas, rechazadas y próximas sesiones. Al abrir una pendiente se ve materia, tema, fecha, modalidad y tarifa; aceptar o rechazar pide confirmación y la API avisa al estudiante.
+- **Historial del tutor:** sesiones pasadas con fecha, estudiante anonimizado, materia, estado y tarifa; detalle con la calificación y el comentario recibidos, y filtros por fecha, materia y estado que solo cambian la consulta, nunca los datos.
 - **Inicio de tutor y panel de administración:** vistas de solo lectura con las sesiones del tutor y las métricas de la plataforma.
 
 Traduce los errores de negocio de la API a mensajes en español y mantiene uniforme el de credenciales inválidas, para no revelar si un correo está registrado.
@@ -95,7 +97,9 @@ La variable `VITE_API_URL` apunta por defecto a `http://localhost:3000/api/v1`. 
 | `/app/reservar` | Estudiante | Búsqueda de tutores, disponibilidad y creación de reservas |
 | `/app/postular` | Estudiante | Postulación como tutor con materias del pensum oficial |
 | `/app/tutor` | Tutor | Sesiones del tutor e ingresos |
+| `/app/solicitudes` | Tutor | Panel de solicitudes: responder pendientes y ver aceptadas, rechazadas y próximas sesiones |
 | `/app/oferta` | Tutor | Biografía, tarifa, modalidades, materias y horarios |
+| `/app/historial` | Tutor | Historial de tutorías y calificaciones recibidas, con filtros |
 | `/app/admin` | Administrador | Métricas y postulaciones pendientes |
 
 `/` redirige a la pantalla inicial del rol. Entrar a una sección de otro rol devuelve a la propia con un aviso; sin sesión, a `/login`.
@@ -173,8 +177,12 @@ front/
       VerifyScreen.tsx        Ruta /verificar
       RatingsScreen.tsx       Ruta /app/calificaciones
       TutorHome.tsx           Ruta /app/tutor
+      TutorRequests.tsx       Ruta /app/solicitudes
+      TutorHistory.tsx        Ruta /app/historial
       AdminHome.tsx           Ruta /app/admin
     reservas/                 Reserva de tutorías (SCRUM-20 y SCRUM-21)
+    historial/                API y tipos del historial del tutor
+    solicitudes/              API y tipos del panel de solicitudes del tutor
     test/renderApp.tsx        Monta la app real con router en memoria y dobles de fetch
     App.tsx                   Router y proveedor de sesión
     styles.css                Diseño responsive

@@ -11,7 +11,7 @@ import { TutorHistoryQueryDto } from './dto/tutors.dto';
 const DATE_ONLY = /^\d{4}-\d{2}-\d{2}$/;
 
 /**
- * Historial de tutorias y calificaciones del tutor (SCRUM-29/32).
+ * Historial de tutorias y calificaciones del tutor.
  *
  * Es de solo lectura: filtrar, paginar o abrir un detalle nunca modifica reservas, pagos ni
  * resenas. El estudiante siempre se devuelve como alias anonimo.

@@ -200,6 +200,7 @@ Filtros de `/tutors`: `facultyId`, `programId`, `subjectId`, `professorId`, `min
 | PATCH, DELETE | `/api/v1/tutor/availability/:id` | Actualizar/eliminar franja |
 | GET | `/api/v1/tutor/dashboard` | Dashboard de solicitudes |
 | GET | `/api/v1/tutor/requests` | Solicitudes del tutor |
+| GET | `/api/v1/tutor/requests/dashboard` | Panel de solicitudes: pendientes, aceptadas, rechazadas y próximas sesiones |
 | GET | `/api/v1/tutor/history` | Historial de sesiones (filtros por fecha, materia y estado) |
 | GET | `/api/v1/tutor/history/summary` | Resumen de trayectoria y calificaciones |
 | GET | `/api/v1/tutor/history/:id` | Detalle de una sesión con su reseña |

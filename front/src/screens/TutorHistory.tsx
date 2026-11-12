@@ -151,7 +151,7 @@ function SessionDetail({
 }
 
 /**
- * Historial de tutorías y calificaciones del tutor (SCRUM-29).
+ * Historial de tutorías y calificaciones del tutor.
  *
  * Es de solo lectura: los filtros se aplican al enviar el formulario y solo
  * cambian qué filas se consultan, nunca los datos. El nombre del estudiante
