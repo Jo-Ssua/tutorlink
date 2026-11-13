@@ -306,13 +306,13 @@ Cada materia debe incluir `evidenceUrl` o, en su lugar, `grade` (minimo 3.0) y `
 | --- | --- | --- | --- | --- |
 | POST | `/bookings/quote` | `STUDENT` | Cotizar una franja | `tutorProfileId`, `slotId` |
 | POST | `/bookings` | `STUDENT` | Crear reserva | `tutorProfileId`, `slotId`, `subjectId`, `topic`, `modality` (`VIRTUAL` o `IN_PERSON`), `description?` |
-| GET | `/bookings/my` | `STUDENT` | Reservas del estudiante | `status?`, `from?`, `to?`, `page?`, `limit?` |
+| GET | `/bookings/my` | `STUDENT` | Reservas del estudiante. Cada reserva incluye `cancellationPolicy` con `windowHours`, `canCancel`, `deadline` y `message` | `status?`, `from?`, `to?`, `page?`, `limit?` |
 | GET | `/bookings/tutor` | `TUTOR` | Reservas del tutor | `status?`, `from?`, `to?`, `page?`, `limit?` |
 | GET | `/bookings/:id` | Autenticado | Detalle de reserva | - |
 | POST | `/bookings/:id/accept` | `TUTOR` | Aceptar reserva pendiente y notificar al estudiante. `409 BOOKING_EXPIRED` si la hora ya pasó; `409 INVALID_BOOKING_STATE` si ya fue respondida | - |
 | POST | `/bookings/:id/reject` | `TUTOR` | Rechazar reserva pendiente, liberar la franja y notificar al estudiante. `409 INVALID_BOOKING_STATE` si ya fue respondida | `reason?` |
 | POST | `/bookings/:id/payment` | `STUDENT` | Pago simulado | `simulatePayment: true` |
-| POST | `/bookings/:id/cancel` | Autenticado | Cancelar y reembolsar | `reason?` |
+| POST | `/bookings/:id/cancel` | Autenticado | Cancelar y reembolsar. El estudiante solo puede cancelar con `CANCELLATION_WINDOW_HOURS` de anticipación; fuera del plazo responde `409 CANCELLATION_WINDOW_CLOSED` y la reserva no cambia | `reason?` |
 | POST | `/bookings/:id/complete` | `TUTOR`, `ADMIN` | Finalizar sesion | - |
 | POST | `/bookings/:id/review` | `STUDENT` | Calificar reserva completada | `rating`, `comment?`, `isAnonymous?` |
 

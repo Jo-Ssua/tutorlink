@@ -929,6 +929,45 @@ export class BookingsService {
       cancelledAt: booking.cancelledAt,
       completedAt: booking.completedAt,
       createdAt: booking.createdAt,
+      cancellationPolicy: this.cancellationPolicy(booking, viewer),
+    };
+  }
+
+  /**
+   * Regla de cancelacion que la pantalla puede mostrar sin repetir la
+   * configuracion del servidor. `canCancel` no reemplaza la validacion de
+   * `cancel`: la API sigue siendo la que decide y la que responde cuando el
+   * plazo ya vencio.
+   */
+  private cancellationPolicy(
+    booking: { status: BookingStatus; startAt: Date },
+    viewer: AuthenticatedUser,
+  ) {
+    const configured = Number(
+      this.config.getOrThrow<number>('cancellationWindowHours'),
+    );
+    const windowHours = Number.isFinite(configured) ? configured : 24;
+    const deadline = new Date(booking.startAt.getTime() - windowHours * 3_600_000);
+    const active = (
+      [
+        BookingStatus.PENDING,
+        BookingStatus.ACCEPTED,
+        BookingStatus.CONFIRMED,
+      ] as BookingStatus[]
+    ).includes(booking.status);
+    const canCancel =
+      active &&
+      (viewer.role === Role.STUDENT
+        ? Date.now() <= deadline.getTime()
+        : booking.startAt > new Date());
+
+    return {
+      windowHours,
+      canCancel,
+      deadline,
+      message: canCancel
+        ? `Puedes cancelar hasta ${windowHours} horas antes del inicio.`
+        : `La politica solo permite cancelar con al menos ${windowHours} horas de anticipacion.`,
     };
   }
 
