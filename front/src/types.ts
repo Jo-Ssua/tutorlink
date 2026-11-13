@@ -205,26 +205,58 @@ export interface AdminStats {
   };
 }
 
+/** Materia declarada en una postulación, con el soporte que el admin revisa. */
+export interface TutorApplicationSubject {
+  id: string;
+  status: VerificationStatus;
+  evidenceUrl: string | null;
+  grade: number | null;
+  approvedSemester: number | null;
+  rejectionReason: string | null;
+  subject: { id: string; name: string; code: string };
+}
+
 export interface TutorApplication {
   id: string;
   userId: string;
   fullName: string;
   institutionalEmail: string;
   userStatus: string;
-  verificationStatus: string;
+  role: Role;
+  emailVerifiedAt: string | null;
+  verificationStatus: VerificationStatus;
+  rejectionReason: string | null;
+  bio: string | null;
   hourlyRate: number;
   experienceYears: number;
+  modalities: Modality[];
   createdAt: string;
-  subjects: Array<{
-    id: string;
-    status: string;
-    subject: { id: string; name: string; code: string };
-  }>;
+  subjects: TutorApplicationSubject[];
+  professors: Array<{ id: string; fullName: string; email: string | null }>;
 }
 
 export interface TutorApplicationList {
   items: TutorApplication[];
   pagination: PaginationMeta;
+}
+
+export interface ApproveTutorApplicationResult {
+  application: {
+    id: string;
+    userId: string;
+    fullName: string;
+    institutionalEmail: string;
+    verificationStatus: VerificationStatus;
+    verifiedAt: string | null;
+  };
+  message: string;
+}
+
+export interface RejectTutorApplicationResult {
+  id: string;
+  verificationStatus: VerificationStatus;
+  reason: string;
+  message: string;
 }
 
 export interface Program {

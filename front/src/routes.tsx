@@ -7,6 +7,7 @@ import {
 import { AppLayout } from './layouts/AppLayout';
 import { ReservasApp } from './reservas/ReservasApp';
 import { AdminHome } from './screens/AdminHome';
+import { AdminTutorApplications } from './screens/AdminTutorApplications';
 import { LoginScreen } from './screens/LoginScreen';
 import { RatingsScreen } from './screens/RatingsScreen';
 import { RegisterScreen } from './screens/RegisterScreen';
@@ -51,6 +52,7 @@ export function AppRoutes() {
 
           <Route element={<RoleRoute roles={['ADMIN']} />}>
             <Route path="admin" element={<AdminHome />} />
+            <Route path="admin/postulaciones" element={<AdminTutorApplications />} />
           </Route>
         </Route>
       </Route>
