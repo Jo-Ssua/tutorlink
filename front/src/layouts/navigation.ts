@@ -35,6 +35,7 @@ export interface NavItem {
 const NAV_BY_ROLE: Record<Role, NavItem[]> = {
   STUDENT: [
     { to: '/app/reservar', label: 'Reservar', Icon: MagnifyingGlassIcon },
+    { to: '/app/sesiones', label: 'Mis sesiones', Icon: CalendarBlankIcon },
     { to: '/app/emergencia', label: 'Emergencia', Icon: LightningIcon },
     { to: '/app/pagos', label: 'Pagos', Icon: CreditCardIcon },
     { to: '/app/calificaciones', label: 'Calificaciones', Icon: StarIcon },

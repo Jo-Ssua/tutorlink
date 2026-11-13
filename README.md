@@ -19,7 +19,7 @@ Proyecto académico de la asignatura Gerencia de Proyectos de TI (Universidad Ic
 | Tutores | Postulación, aprobación por administrador, verificación de materias, perfil público |
 | Búsqueda | Filtros por facultad, programa, materia, profesor, tarifa, calificación y modalidad |
 | **Disponibilidad** | Consulta de franjas libres del tutor, siempre actualizadas (SCRUM-20) |
-| **Reservas** | Crear la reserva con materia, tema, modalidad, fecha y hora; aceptación del tutor; pago simulado; cancelación (SCRUM-21) |
+| **Reservas** | Crear la reserva con materia, tema, modalidad, fecha y hora; aceptación del tutor; pago simulado; cancelación según la política de anticipación (SCRUM-21 y SCRUM-23) |
 | Reseñas | Calificación de 1 a 5 y comentario después de una sesión completada (SCRUM-17) |
 | StudyMatch | Asignación automática de tutor para solicitudes urgentes |
 | Administración | Aprobación de tutores, métricas y notificaciones |
@@ -45,11 +45,14 @@ Estudiante: elige tutor -> consulta franjas disponibles -> completa materia, tem
 Tutor:      acepta o rechaza  (si rechaza, la franja se libera)
 Estudiante: confirma el pago simulado => reserva CONFIRMADA
 Tutor:      marca la sesión como completada => el estudiante puede calificar
+Estudiante: en "Mis sesiones" consulta fecha, tutor, materia, estado y tarifa
+Estudiante: cancela dentro del plazo => reserva CANCELADA y franja liberada
 ```
 Reglas clave de disponibilidad:
 - Solo se muestran franjas futuras y libres.
 - Cuando alguien reserva una franja, deja de estar disponible para los demás (la reserva es atómica en el backend; si dos personas compiten, solo una gana).
 - Si el tutor modifica su agenda, los cambios se reflejan para futuras reservas; la pantalla del estudiante se refresca sola cada 15 segundos.
+- La cancelación del estudiante exige la anticipación de `CANCELLATION_WINDOW_HOURS` (24 h por defecto). Fuera del plazo la API responde `CANCELLATION_WINDOW_CLOSED` y la reserva se conserva.
 
 ## Arquitectura
 ```text
