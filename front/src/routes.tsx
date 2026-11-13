@@ -12,6 +12,7 @@ import { LoginScreen } from './screens/LoginScreen';
 import { RatingsScreen } from './screens/RatingsScreen';
 import { RegisterScreen } from './screens/RegisterScreen';
 import { StudentPayments } from './screens/StudentPayments';
+import { StudentBookings } from './screens/StudentBookings';
 import { TutorApplicationScreen } from './screens/TutorApplicationScreen';
 import { TutorHistory } from './screens/TutorHistory';
 import { TutorHome } from './screens/TutorHome';
@@ -40,6 +41,7 @@ export function AppRoutes() {
           <Route element={<RoleRoute roles={['STUDENT']} />}>
             <Route path="calificaciones" element={<RatingsScreen />} />
             <Route path="reservar" element={<ReservasApp />} />
+            <Route path="sesiones" element={<StudentBookings />} />
             <Route path="pagos" element={<StudentPayments />} />
             <Route path="emergencia" element={<StudyMatchScreen />} />
             <Route path="postular" element={<TutorApplicationScreen />} />

@@ -4,6 +4,7 @@ import type {
   ApiErrorBody,
   ApiSuccess,
   ApproveTutorApplicationResult,
+  Booking,
   BookingList,
   BookingStatus,
   CreateReviewPayload,
@@ -299,6 +300,24 @@ export async function getMyBookings(
   if (params.status) query.set('status', params.status);
 
   return request<BookingList>(`/bookings/my?${query.toString()}`);
+}
+
+/**
+ * Cancela una reserva del estudiante.
+ *
+ * La API valida la politica de cancelacion: si faltan menos horas de las
+ * permitidas responde `CANCELLATION_WINDOW_CLOSED` y la reserva no cambia.
+ */
+export async function cancelBooking(
+  bookingId: string,
+  reason?: string,
+): Promise<{ booking: Booking; message: string }> {
+  const trimmed = reason?.trim();
+
+  return request<{ booking: Booking; message: string }>(`/bookings/${bookingId}/cancel`, {
+    method: 'POST',
+    body: JSON.stringify(trimmed ? { reason: trimmed } : {}),
+  });
 }
 
 /**

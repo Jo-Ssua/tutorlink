@@ -137,6 +137,13 @@ export interface Booking {
   cancelledAt: string | null;
   completedAt: string | null;
   createdAt: string;
+  /** Regla de cancelacion calculada por la API para la reserva. */
+  cancellationPolicy?: {
+    windowHours: number;
+    canCancel: boolean;
+    deadline: string;
+    message: string;
+  };
 }
 
 export interface BookingList {
