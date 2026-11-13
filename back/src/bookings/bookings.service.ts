@@ -323,10 +323,32 @@ export class BookingsService {
       });
     }
 
-    const updated = await this.prisma.booking.update({
-      where: { id: booking.id },
-      data: { status: BookingStatus.ACCEPTED },
-      include: bookingListInclude,
+    // Una solicitud cuya hora ya paso no se puede aceptar; el tutor aun puede rechazarla.
+    if (booking.startAt <= new Date()) {
+      throw new ConflictException({
+        code: 'BOOKING_EXPIRED',
+        message: 'La hora de esta solicitud ya paso. Rechazala para liberar la franja.',
+      });
+    }
+
+    // La condicion de estado evita que dos respuestas simultaneas ganen las dos.
+    const updated = await this.prisma.$transaction(async (tx) => {
+      const { count } = await tx.booking.updateMany({
+        where: { id: booking.id, status: BookingStatus.PENDING },
+        data: { status: BookingStatus.ACCEPTED },
+      });
+
+      if (count === 0) {
+        throw new ConflictException({
+          code: 'INVALID_BOOKING_STATE',
+          message: 'La solicitud ya fue respondida',
+        });
+      }
+
+      return tx.booking.findUniqueOrThrow({
+        where: { id: booking.id },
+        include: bookingListInclude,
+      });
     });
 
     await this.notifications.create({
@@ -369,12 +391,23 @@ export class BookingsService {
     }
 
     const updated = await this.prisma.$transaction(async (tx) => {
-      const rejected = await tx.booking.update({
-        where: { id: booking.id },
+      const { count } = await tx.booking.updateMany({
+        where: { id: booking.id, status: BookingStatus.PENDING },
         data: {
           status: BookingStatus.REJECTED,
           cancellationReason: dto.reason,
         },
+      });
+
+      if (count === 0) {
+        throw new ConflictException({
+          code: 'INVALID_BOOKING_STATE',
+          message: 'La solicitud ya fue respondida',
+        });
+      }
+
+      const rejected = await tx.booking.findUniqueOrThrow({
+        where: { id: booking.id },
         include: bookingListInclude,
       });
 

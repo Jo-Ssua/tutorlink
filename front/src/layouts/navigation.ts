@@ -7,6 +7,7 @@ import {
   LightningIcon,
   MagnifyingGlassIcon,
   StarIcon,
+  TrayIcon,
   UserGearIcon,
   type Icon,
 } from '@phosphor-icons/react';
@@ -41,6 +42,7 @@ const NAV_BY_ROLE: Record<Role, NavItem[]> = {
   ],
   TUTOR: [
     { to: '/app/tutor', label: 'Mis sesiones', Icon: CalendarBlankIcon },
+    { to: '/app/solicitudes', label: 'Solicitudes', Icon: TrayIcon },
     { to: '/app/oferta', label: 'Mi oferta', Icon: UserGearIcon },
     { to: '/app/historial', label: 'Historial', Icon: ClockCounterClockwiseIcon },
   ],
