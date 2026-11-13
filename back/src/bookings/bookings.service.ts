@@ -863,7 +863,12 @@ export class BookingsService {
             : { id: viewer.id },
       price: {
         hourlyRate: money(booking.hourlyRate),
+        durationMinutes: booking.durationMinutes,
         subtotal: money(booking.subtotal),
+        platformFeePercent: this.feePercentOf(
+          money(booking.subtotal),
+          money(booking.platformFee),
+        ),
         platformFee: money(booking.platformFee),
         total: money(booking.total),
         currency: 'COP',
@@ -925,6 +930,17 @@ export class BookingsService {
 
   private paymentReference(): string {
     return `SIM-${Date.now()}-${randomUUID().slice(0, 8).toUpperCase()}`;
+  }
+
+  /**
+   * Porcentaje de comision que quedo registrado en la reserva.
+   *
+   * Se deriva de los montos guardados y no de la configuracion actual: si la
+   * comision de la plataforma cambia, una reserva vieja debe seguir mostrando
+   * el porcentaje con el que se cotizo.
+   */
+  private feePercentOf(subtotal: number, platformFee: number): number {
+    return subtotal === 0 ? 0 : roundMoney((platformFee / subtotal) * 100);
   }
 
   private alias(studentId: string): string {
