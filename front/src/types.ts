@@ -70,6 +70,37 @@ export interface PaginationMeta {
   hasPreviousPage: boolean;
 }
 
+/**
+ * Desglose del costo tal como quedó registrado en la reserva. El porcentaje de
+ * comisión viene del backend: se deriva de los montos guardados, así que una
+ * reserva vieja sigue mostrando el porcentaje con el que se cotizó.
+ */
+export interface BookingPrice {
+  hourlyRate: number;
+  durationMinutes: number;
+  subtotal: number;
+  platformFeePercent: number;
+  platformFee: number;
+  total: number;
+  currency: string;
+  simulated: boolean;
+}
+
+export interface BookingPayment {
+  id: string;
+  reference: string;
+  status: string;
+  amount: number;
+  simulated: boolean;
+  paidAt: string | null;
+}
+
+export interface SimulatedPaymentResult {
+  booking: Booking;
+  payment: BookingPayment;
+  disclaimer: string;
+}
+
 export interface BookingReview {
   rating: number;
   comment: string | null;
@@ -99,23 +130,9 @@ export interface Booking {
     averageRating: number | null;
     reviewCount: number | null;
   } | null;
-  price: {
-    hourlyRate: number;
-    subtotal: number;
-    platformFee: number;
-    total: number;
-    currency: string;
-    simulated: boolean;
-  };
+  price: BookingPrice;
   review: BookingReview | null;
-  payment: {
-    id: string;
-    reference: string;
-    status: string;
-    amount: number;
-    simulated: boolean;
-    paidAt: string | null;
-  } | null;
+  payment: BookingPayment | null;
   cancellationReason: string | null;
   cancelledAt: string | null;
   completedAt: string | null;

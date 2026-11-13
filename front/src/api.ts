@@ -4,6 +4,7 @@ import type {
   ApiErrorBody,
   ApiSuccess,
   BookingList,
+  BookingStatus,
   CreateReviewPayload,
   CreateReviewResult,
   CatalogSubject,
@@ -12,6 +13,7 @@ import type {
   Program,
   RegisterPayload,
   SessionUser,
+  SimulatedPaymentResult,
   ApplyTutorPayload,
   OwnTutorApplication,
   OwnTutorApplicationSnapshot,
@@ -281,6 +283,34 @@ export async function getMe(): Promise<SessionUser> {
 
 export async function getMyCompletedBookings(page = 1, limit = 20): Promise<BookingList> {
   return request<BookingList>(`/bookings/my?status=COMPLETED&page=${page}&limit=${limit}`);
+}
+
+/** Reservas del estudiante. Sin `status` llegan todas, de la más próxima atrás. */
+export async function getMyBookings(
+  params: { status?: BookingStatus; page?: number; limit?: number } = {},
+): Promise<BookingList> {
+  const query = new URLSearchParams({
+    page: String(params.page ?? 1),
+    limit: String(params.limit ?? 20),
+  });
+  if (params.status) query.set('status', params.status);
+
+  return request<BookingList>(`/bookings/my?${query.toString()}`);
+}
+
+/**
+ * Pago simulado de una reserva ya aceptada por el tutor.
+ *
+ * `simulatePayment: true` es la única confirmación que pide la API: no hay
+ * datos bancarios en el MVP y la transacción queda como pago simulado aprobado.
+ */
+export async function confirmSimulatedPayment(
+  bookingId: string,
+): Promise<SimulatedPaymentResult> {
+  return request<SimulatedPaymentResult>(`/bookings/${bookingId}/payment`, {
+    method: 'POST',
+    body: JSON.stringify({ simulatePayment: true }),
+  });
 }
 
 export async function createBookingReview(
