@@ -1,5 +1,6 @@
 import { Card, Chip } from '@heroui/react';
 import { useCallback, useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { ApiError, getAdminStats, getPendingTutorApplications } from '../api';
 import { LoadError } from '../components/LoadError';
 import { StatTile } from '../components/StatTile';
@@ -27,8 +28,9 @@ function Meta({ label, children }: { label: string; children: React.ReactNode })
 /**
  * Pantalla inicial del administrador: métricas y postulaciones pendientes.
  *
- * Es de solo lectura. Aprobar y rechazar postulaciones ya existe en la API
- * (`PATCH /admin/tutor-applications/:id/...`) y tendrá su propia pantalla.
+ * El resumen es de solo lectura: aprobar y rechazar se hace en
+ * `AdminTutorApplications` (`/app/admin/postulaciones`), que trae la evidencia
+ * completa de cada postulante.
  */
 export function AdminHome() {
   const [stats, setStats] = useState<AdminStats | null>(null);
@@ -118,13 +120,19 @@ export function AdminHome() {
 
       {!loading && !error && (
         <section className="flex flex-col gap-4" aria-labelledby="admin-applications-title">
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <h2 id="admin-applications-title" className="text-lg font-bold text-foreground">
               Postulaciones pendientes
             </h2>
             <Chip size="sm" variant="soft" color="warning">
               {applications.length}
             </Chip>
+            <Link
+              to="/app/admin/postulaciones"
+              className="ml-auto text-sm font-semibold text-accent underline"
+            >
+              Revisar postulaciones
+            </Link>
           </div>
 
           {applications.length === 0 ? (

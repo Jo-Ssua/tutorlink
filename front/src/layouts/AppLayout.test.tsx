@@ -78,10 +78,10 @@ describe('navegación de la aplicación', () => {
     await waitForHeading(/Estado de la plataforma/);
 
     const destinations = new Set(navDestinations());
-    expect(destinations).toEqual(new Set(['/app/admin']));
+    expect(destinations).toEqual(new Set(['/app/admin', '/app/admin/postulaciones']));
   });
 
-  it('da pestañas inferiores solo cuando hay más de un destino', async () => {
+  it('da pestañas inferiores cuando hay más de un destino', async () => {
     withStoredSession('ADMIN');
     stubApi({
       '/auth/me': { data: sessionUser('ADMIN') },
@@ -92,8 +92,9 @@ describe('navegación de la aplicación', () => {
     renderApp('/app/admin');
     await waitForHeading(/Estado de la plataforma/);
 
-    // Con un solo destino no hay entre qué moverse: solo queda la barra superior.
-    expect(screen.getAllByRole('navigation', { name: 'Secciones' })).toHaveLength(1);
+    // Dos destinos (resumen y revisión de postulaciones): barra superior y
+    // pestañas inferiores. Con uno solo, `AppLayout` no dibuja las pestañas.
+    expect(screen.getAllByRole('navigation', { name: 'Secciones' })).toHaveLength(2);
   });
 
   it('le da al tutor su propia pestaña de oferta', async () => {
