@@ -24,7 +24,8 @@
     "prisma:seed": "prisma db seed",
     "db:push": "prisma db push",
     "openapi:export": "ts-node --transpile-only scripts/export-openapi.ts",
-    "demo:pending-review": "ts-node --transpile-only scripts/demo-pending-review.ts"
+    "demo:pending-review": "ts-node --transpile-only scripts/demo-pending-review.ts",
+    "demo:accepted-booking": "ts-node --transpile-only scripts/demo-accepted-booking.ts"
   },
   "dependencies": {
     "@nestjs/common": "^11.1.6",
