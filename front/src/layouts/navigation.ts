@@ -1,9 +1,13 @@
 import {
   CalendarBlankIcon,
   ChartBarIcon,
+  ClockCounterClockwiseIcon,
+  CreditCardIcon,
   GraduationCapIcon,
+  LightningIcon,
   MagnifyingGlassIcon,
   StarIcon,
+  TrayIcon,
   UserGearIcon,
   type Icon,
 } from '@phosphor-icons/react';
@@ -31,14 +35,21 @@ export interface NavItem {
 const NAV_BY_ROLE: Record<Role, NavItem[]> = {
   STUDENT: [
     { to: '/app/reservar', label: 'Reservar', Icon: MagnifyingGlassIcon },
+    { to: '/app/emergencia', label: 'Emergencia', Icon: LightningIcon },
+    { to: '/app/pagos', label: 'Pagos', Icon: CreditCardIcon },
     { to: '/app/calificaciones', label: 'Calificaciones', Icon: StarIcon },
     { to: '/app/postular', label: 'Postularme', Icon: GraduationCapIcon },
   ],
   TUTOR: [
     { to: '/app/tutor', label: 'Mis sesiones', Icon: CalendarBlankIcon },
+    { to: '/app/solicitudes', label: 'Solicitudes', Icon: TrayIcon },
     { to: '/app/oferta', label: 'Mi oferta', Icon: UserGearIcon },
+    { to: '/app/historial', label: 'Historial', Icon: ClockCounterClockwiseIcon },
   ],
-  ADMIN: [{ to: '/app/admin', label: 'Administración', Icon: ChartBarIcon }],
+  ADMIN: [
+    { to: '/app/admin', label: 'Administración', Icon: ChartBarIcon },
+    { to: '/app/admin/postulaciones', label: 'Tutores', Icon: GraduationCapIcon },
+  ],
 };
 
 export function navItemsFor(role: Role | undefined): NavItem[] {

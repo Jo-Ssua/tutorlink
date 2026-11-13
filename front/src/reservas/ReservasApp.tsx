@@ -58,6 +58,7 @@ export function ReservasApp() {
             setScreen({ name: 'slots', tutor: screen.tutor, slot: null, notice })
           }
           onCreated={(result) => setScreen({ name: 'done', result })}
+          onCancel={() => setScreen({ name: 'tutors' })}
         />
       )}
 

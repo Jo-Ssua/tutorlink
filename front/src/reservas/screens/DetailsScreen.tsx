@@ -14,7 +14,7 @@ import {
   TextField,
 } from '@heroui/react';
 import { CheckCircleIcon } from '@phosphor-icons/react';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { ApiError } from '../../api';
 import { FormError } from '../../components/FormFeedback';
 import { createBooking, quoteBooking } from '../api';
@@ -55,12 +55,15 @@ export function DetailsScreen({
   onBack,
   onChangeSlot,
   onCreated,
+  onCancel,
 }: {
   tutor: TutorProfile;
   slot: AvailabilitySlot;
   onBack: () => void;
   onChangeSlot: (notice?: string) => void;
   onCreated: (result: CreatedBooking) => void;
+  /** Salir del flujo sin reserva ni cobro. */
+  onCancel: () => void;
 }) {
   const modalityOptions = allowedModalities(slot.modality);
 
@@ -75,6 +78,8 @@ export function DetailsScreen({
   const [terms, setTerms] = useState(false);
 
   const [price, setPrice] = useState<PriceBreakdown | null>(null);
+  const [quoteFailed, setQuoteFailed] = useState(false);
+  const [leaving, setLeaving] = useState(false);
   const [pending, setPending] = useState<FieldKey[]>([]);
   const [serverFields, setServerFields] = useState<Partial<Record<FieldKey, string>>>({});
   const [submitError, setSubmitError] = useState<{ message: string; slotTaken: boolean } | null>(
@@ -82,14 +87,26 @@ export function DetailsScreen({
   );
   const [submitting, setSubmitting] = useState(false);
 
-  useEffect(() => {
+  /*
+   * La cotización la manda el servidor y nadie la estima aquí: un total
+   * calculado en el cliente se queda sin la comisión, y un valor más bajo que
+   * el real es justo el costo oculto que esta pantalla tiene que evitar. Si
+   * falla, se muestra el error con reintento y no se deja confirmar.
+   */
+  const loadQuote = useCallback(() => {
+    setQuoteFailed(false);
     quoteBooking(tutor.id, slot.id)
       .then((result) => setPrice(result.price))
-      .catch(() => setPrice(null));
+      .catch(() => {
+        setPrice(null);
+        setQuoteFailed(true);
+      });
   }, [tutor.id, slot.id]);
 
-  const fallbackSubtotal = (tutor.hourlyRate * durationMinutes(slot.startAt, slot.endAt)) / 60;
-  const total = price?.total ?? fallbackSubtotal;
+  useEffect(() => {
+    loadQuote();
+  }, [loadQuote]);
+
   const trimmedTopic = topic.trim();
 
   function findPending(): FieldKey[] {
@@ -326,35 +343,55 @@ export function DetailsScreen({
             <p className="text-xs font-semibold tracking-wide text-muted uppercase">
               Desglose del costo
             </p>
-            <div className="flex items-start justify-between gap-4">
-              <span className="flex flex-col text-sm text-foreground">
-                Valor de la sesión
-                <small className="text-muted">
-                  {formatDuration(durationMinutes(slot.startAt, slot.endAt))} ×{' '}
-                  {formatCop(tutor.hourlyRate)} / hora
-                </small>
-              </span>
-              <strong className="tabular-nums">
-                {formatCop(price?.subtotal ?? fallbackSubtotal)}
-              </strong>
-            </div>
-            <div className="flex items-start justify-between gap-4">
-              <span className="flex flex-col text-sm text-foreground">
-                Tarifa de servicio TutorLink
-                <small className="text-muted">
-                  {price ? `${price.platformFeePercent}% de comisión` : 'Calculando...'}
-                </small>
-              </span>
-              <strong className="text-accent tabular-nums">
-                {formatCop(price?.platformFee ?? 0)}
-              </strong>
-            </div>
-            <div className="flex items-center justify-between gap-4 border-t border-border pt-3">
-              <span className="text-xs font-semibold tracking-wide text-muted uppercase">
-                Total a pagar
-              </span>
-              <strong className="text-lg tabular-nums">{formatCop(total)} COP</strong>
-            </div>
+
+            {quoteFailed ? (
+              <FlowAlert
+                status="warning"
+                title="No pudimos calcular el valor de la sesión"
+                action={
+                  <Button size="sm" variant="tertiary" onPress={loadQuote}>
+                    Reintentar
+                  </Button>
+                }
+              >
+                Para no mostrarte un total incompleto, la confirmación queda bloqueada hasta que
+                el valor llegue del servidor.
+              </FlowAlert>
+            ) : (
+              <>
+                <div className="flex items-start justify-between gap-4">
+                  <span className="flex flex-col text-sm text-foreground">
+                    Valor de la sesión
+                    <small className="text-muted">
+                      {formatDuration(durationMinutes(slot.startAt, slot.endAt))} ×{' '}
+                      {formatCop(tutor.hourlyRate)} / hora
+                    </small>
+                  </span>
+                  <strong className="tabular-nums">
+                    {price ? formatCop(price.subtotal) : 'Calculando...'}
+                  </strong>
+                </div>
+                <div className="flex items-start justify-between gap-4">
+                  <span className="flex flex-col text-sm text-foreground">
+                    Tarifa de servicio TutorLink
+                    <small className="text-muted">
+                      {price ? `${price.platformFeePercent}% de comisión` : 'Calculando...'}
+                    </small>
+                  </span>
+                  <strong className="text-accent tabular-nums">
+                    {price ? formatCop(price.platformFee) : 'Calculando...'}
+                  </strong>
+                </div>
+                <div className="flex items-center justify-between gap-4 border-t border-border pt-3">
+                  <span className="text-xs font-semibold tracking-wide text-muted uppercase">
+                    Total a pagar
+                  </span>
+                  <strong className="text-lg tabular-nums">
+                    {price ? `${formatCop(price.total)} COP` : 'Calculando...'}
+                  </strong>
+                </div>
+              </>
+            )}
           </Card.Content>
         </Card>
 
@@ -391,11 +428,39 @@ export function DetailsScreen({
           {fieldError('terms') && <FieldError>{fieldError('terms')}</FieldError>}
         </Checkbox>
 
-        <ActionBar>
-          <Button type="submit" isDisabled={submitting}>
-            {submitting ? 'Enviando solicitud...' : `Confirmar reserva · ${formatCop(total)}`}
-          </Button>
-        </ActionBar>
+        {leaving ? (
+          <div
+            className="flex flex-col gap-3 rounded-lg border border-border p-4"
+            role="group"
+            aria-label="Confirmar que quieres salir sin reservar"
+          >
+            <p className="text-sm text-foreground">
+              Si sales ahora no se crea ninguna reserva y no se registra ningún cobro, ni simulado
+              ni real.
+            </p>
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <Button variant="tertiary" onPress={onCancel}>
+                Salir sin reservar
+              </Button>
+              <Button variant="tertiary" onPress={() => setLeaving(false)}>
+                Seguir con la reserva
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <ActionBar>
+            <Button type="submit" isDisabled={submitting || !price}>
+              {submitting
+                ? 'Enviando solicitud...'
+                : price
+                  ? `Confirmar reserva · ${formatCop(price.total)}`
+                  : 'Confirmar reserva'}
+            </Button>
+            <Button variant="tertiary" isDisabled={submitting} onPress={() => setLeaving(true)}>
+              Cancelar
+            </Button>
+          </ActionBar>
+        )}
       </form>
     </>
   );

@@ -7,13 +7,19 @@ import {
 import { AppLayout } from './layouts/AppLayout';
 import { ReservasApp } from './reservas/ReservasApp';
 import { AdminHome } from './screens/AdminHome';
+import { AdminTutorApplications } from './screens/AdminTutorApplications';
 import { LoginScreen } from './screens/LoginScreen';
 import { RatingsScreen } from './screens/RatingsScreen';
 import { RegisterScreen } from './screens/RegisterScreen';
+import { StudentPayments } from './screens/StudentPayments';
 import { TutorApplicationScreen } from './screens/TutorApplicationScreen';
+import { TutorHistory } from './screens/TutorHistory';
 import { TutorHome } from './screens/TutorHome';
+import { TutorRequests } from './screens/TutorRequests';
 import { TutorProfileSettings } from './screens/TutorProfileSettings';
 import { VerifyScreen } from './screens/VerifyScreen';
+import { NotificationsScreen } from './screens/NotificationsScreen';
+import { StudyMatchScreen } from './screens/StudyMatchScreen';
 
 export function AppRoutes() {
   return (
@@ -29,20 +35,26 @@ export function AppRoutes() {
       <Route element={<ProtectedRoute />}>
         <Route path="/app" element={<AppLayout />}>
           <Route index element={<RoleHomeRedirect />} />
+          <Route path="notificaciones" element={<NotificationsScreen />} />
 
           <Route element={<RoleRoute roles={['STUDENT']} />}>
             <Route path="calificaciones" element={<RatingsScreen />} />
             <Route path="reservar" element={<ReservasApp />} />
+            <Route path="pagos" element={<StudentPayments />} />
+            <Route path="emergencia" element={<StudyMatchScreen />} />
             <Route path="postular" element={<TutorApplicationScreen />} />
           </Route>
 
           <Route element={<RoleRoute roles={['TUTOR']} />}>
             <Route path="tutor" element={<TutorHome />} />
+            <Route path="solicitudes" element={<TutorRequests />} />
             <Route path="oferta" element={<TutorProfileSettings />} />
+            <Route path="historial" element={<TutorHistory />} />
           </Route>
 
           <Route element={<RoleRoute roles={['ADMIN']} />}>
             <Route path="admin" element={<AdminHome />} />
+            <Route path="admin/postulaciones" element={<AdminTutorApplications />} />
           </Route>
         </Route>
       </Route>

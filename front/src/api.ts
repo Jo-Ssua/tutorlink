@@ -3,7 +3,9 @@ import type {
   AdminStats,
   ApiErrorBody,
   ApiSuccess,
+  ApproveTutorApplicationResult,
   BookingList,
+  BookingStatus,
   CreateReviewPayload,
   CreateReviewResult,
   CatalogSubject,
@@ -11,16 +13,27 @@ import type {
   Modality,
   Program,
   RegisterPayload,
+  RejectTutorApplicationResult,
   SessionUser,
+  SimulatedPaymentResult,
   ApplyTutorPayload,
   OwnTutorApplication,
   OwnTutorApplicationSnapshot,
   TutorApplicationList,
   TutorOwnProfile,
   VerificationPending,
+  VerificationStatus,
   VerifyEmailResult,
 } from './types';
 import type { AvailabilitySlot } from './reservas/types';
+import type { NotificationList } from './notifications/types';
+import type {
+  StudyMatchActionResult,
+  StudyMatchRequest,
+  StudyMatchRequestPage,
+  StudyMatchTutorProposal,
+  StudyMatchUrgency,
+} from './studymatch/types';
 
 const API_URL = (import.meta.env.VITE_API_URL ?? 'http://localhost:3000/api/v1').replace(
   /\/$/,
@@ -275,6 +288,34 @@ export async function getMyCompletedBookings(page = 1, limit = 20): Promise<Book
   return request<BookingList>(`/bookings/my?status=COMPLETED&page=${page}&limit=${limit}`);
 }
 
+/** Reservas del estudiante. Sin `status` llegan todas, de la más próxima atrás. */
+export async function getMyBookings(
+  params: { status?: BookingStatus; page?: number; limit?: number } = {},
+): Promise<BookingList> {
+  const query = new URLSearchParams({
+    page: String(params.page ?? 1),
+    limit: String(params.limit ?? 20),
+  });
+  if (params.status) query.set('status', params.status);
+
+  return request<BookingList>(`/bookings/my?${query.toString()}`);
+}
+
+/**
+ * Pago simulado de una reserva ya aceptada por el tutor.
+ *
+ * `simulatePayment: true` es la única confirmación que pide la API: no hay
+ * datos bancarios en el MVP y la transacción queda como pago simulado aprobado.
+ */
+export async function confirmSimulatedPayment(
+  bookingId: string,
+): Promise<SimulatedPaymentResult> {
+  return request<SimulatedPaymentResult>(`/bookings/${bookingId}/payment`, {
+    method: 'POST',
+    body: JSON.stringify({ simulatePayment: true }),
+  });
+}
+
 export async function createBookingReview(
   bookingId: string,
   payload: CreateReviewPayload,
@@ -364,6 +405,127 @@ export async function getAdminStats(): Promise<AdminStats> {
 
 export async function getPendingTutorApplications(): Promise<TutorApplicationList> {
   return request<TutorApplicationList>('/admin/tutor-applications?status=PENDING&limit=20');
+}
+
+/**
+ * Postulaciones para la pantalla de revisión: el estado y la búsqueda viajan al
+ * servidor, que ya filtra por nombre o correo y pagina.
+ */
+export async function getTutorApplications(params: {
+  status: VerificationStatus;
+  search?: string;
+  page?: number;
+  limit?: number;
+}): Promise<TutorApplicationList> {
+  const query = new URLSearchParams({
+    status: params.status,
+    page: String(params.page ?? 1),
+    limit: String(params.limit ?? 20),
+  });
+  if (params.search?.trim()) query.set('search', params.search.trim());
+
+  return request<TutorApplicationList>(`/admin/tutor-applications?${query.toString()}`);
+}
+
+export async function approveTutorApplication(
+  applicationId: string,
+): Promise<ApproveTutorApplicationResult> {
+  return request<ApproveTutorApplicationResult>(
+    `/admin/tutor-applications/${applicationId}/approve`,
+    { method: 'PATCH' },
+  );
+}
+
+/** El motivo es obligatorio: queda visible para el solicitante. */
+export async function rejectTutorApplication(
+  applicationId: string,
+  reason: string,
+): Promise<RejectTutorApplicationResult> {
+  return request<RejectTutorApplicationResult>(
+    `/admin/tutor-applications/${applicationId}/reject`,
+    { method: 'PATCH', body: JSON.stringify({ reason: reason.trim() }) },
+  );
+}
+
+export async function getNotifications(
+  page = 1,
+  limit = 30,
+  unreadOnly = false,
+): Promise<NotificationList> {
+  const query = new URLSearchParams({
+    page: String(page),
+    limit: String(limit),
+  });
+  if (unreadOnly) query.set('unreadOnly', 'true');
+  return request<NotificationList>(`/notifications?${query.toString()}`);
+}
+
+export async function getUnreadNotificationCount(): Promise<number> {
+  const result = await request<{ unreadCount: number }>('/notifications/unread-count');
+  return result.unreadCount;
+}
+
+export async function markNotificationRead(notificationId: string): Promise<void> {
+  await request(`/notifications/${notificationId}/read`, { method: 'PATCH' });
+}
+
+export async function markAllNotificationsRead(): Promise<void> {
+  await request('/notifications/read-all', { method: 'PATCH' });
+}
+
+export async function createStudyMatchRequest(payload: {
+  subjectId: string;
+  topic: string;
+  description?: string;
+  urgency: StudyMatchUrgency;
+  modality: Modality;
+  availableFrom: string;
+  availableTo: string;
+}): Promise<StudyMatchActionResult> {
+  return request<StudyMatchActionResult>('/studymatch/requests', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function getMyStudyMatchRequests(
+  page = 1,
+  limit = 20,
+): Promise<StudyMatchRequestPage> {
+  return request<StudyMatchRequestPage>(`/studymatch/requests/my?page=${page}&limit=${limit}`);
+}
+
+export async function getStudyMatchRequest(requestId: string): Promise<StudyMatchRequest> {
+  return request<StudyMatchRequest>(`/studymatch/requests/${requestId}`);
+}
+
+export async function confirmStudyMatchProposal(
+  proposalId: string,
+  payload: { accept: boolean; simulatePayment?: boolean; rejectionReason?: string },
+): Promise<StudyMatchActionResult> {
+  return request<StudyMatchActionResult>(`/studymatch/proposals/${proposalId}/confirm`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function getPendingStudyMatchProposals(): Promise<{
+  items: StudyMatchTutorProposal[];
+  total: number;
+}> {
+  return request<{ items: StudyMatchTutorProposal[]; total: number }>(
+    '/studymatch/proposals/pending',
+  );
+}
+
+export async function respondToStudyMatchProposal(
+  proposalId: string,
+  payload: { action: 'ACCEPT' | 'REJECT'; reason?: string },
+): Promise<{ proposal: StudyMatchTutorProposal; next?: unknown; message: string }> {
+  return request(`/studymatch/proposals/${proposalId}/respond`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
 }
 
 export { API_URL };

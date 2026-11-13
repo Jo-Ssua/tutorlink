@@ -36,7 +36,6 @@ import {
   CreateAvailabilityDto,
   EarningsGroupBy,
   EarningsQueryDto,
-  TutorHistoryQueryDto,
   TutorRequestsQueryDto,
   TutorSearchQueryDto,
   TutorSortBy,
@@ -802,58 +801,6 @@ export class TutorsService {
         total: money(booking.total),
         isEmergency: booking.isEmergency,
         createdAt: booking.createdAt,
-      })),
-      pagination: buildPaginationMeta(query.page, query.limit, total),
-    };
-  }
-
-  async history(user: AuthenticatedUser, query: TutorHistoryQueryDto) {
-    const where: Prisma.BookingWhereInput = {
-      tutorId: user.id,
-      ...(query.status ? { status: query.status } : {}),
-      ...(query.subjectId ? { subjectId: query.subjectId } : {}),
-      ...(query.from || query.to
-        ? {
-            startAt: {
-              ...(query.from ? { gte: new Date(query.from) } : {}),
-              ...(query.to ? { lte: new Date(query.to) } : {}),
-            },
-          }
-        : {}),
-    };
-
-    const [items, total] = await this.prisma.$transaction([
-      this.prisma.booking.findMany({
-        where,
-        orderBy: { startAt: 'desc' },
-        skip: getPaginationSkip(query.page, query.limit),
-        take: query.limit,
-        include: { subject: true, review: true },
-      }),
-      this.prisma.booking.count({ where }),
-    ]);
-
-    return {
-      items: items.map((booking) => ({
-        id: booking.id,
-        studentAlias: this.alias(booking.studentId),
-        subject: booking.subject,
-        topic: booking.topic,
-        startAt: booking.startAt,
-        endAt: booking.endAt,
-        modality: booking.modality,
-        status: booking.status,
-        rate: money(booking.hourlyRate),
-        total: money(booking.total),
-        isEmergency: booking.isEmergency,
-        review: booking.review
-          ? {
-              rating: booking.review.rating,
-              comment: booking.review.comment,
-              isAnonymous: booking.review.isAnonymous,
-              createdAt: booking.review.createdAt,
-            }
-          : null,
       })),
       pagination: buildPaginationMeta(query.page, query.limit, total),
     };

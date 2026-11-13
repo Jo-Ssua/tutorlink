@@ -1,11 +1,23 @@
-import { Card, Chip } from '@heroui/react';
+import { Button, Card, Chip } from '@heroui/react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ApiError, getTutorBookings } from '../api';
+import {
+  ApiError,
+  getPendingStudyMatchProposals,
+  getTutorBookings,
+  respondToStudyMatchProposal,
+} from '../api';
 import { useAuth } from '../auth/AuthContext';
 import { LoadError } from '../components/LoadError';
 import { StatTile } from '../components/StatTile';
 import { toFriendlyError, type FriendlyError } from '../errors';
 import type { Booking, BookingStatus } from '../types';
+import type { StudyMatchTutorProposal } from '../studymatch/types';
+import {
+  formatCop,
+  formatLongDate,
+  formatTimeRange,
+  MODALITY_LABEL,
+} from '../reservas/format';
 
 const dateTimeFormatter = new Intl.DateTimeFormat('es-CO', {
   dateStyle: 'medium',
@@ -46,17 +58,92 @@ function Meta({ label, children }: { label: string; children: React.ReactNode })
   );
 }
 
+function EmergencyProposalCard({
+  proposal,
+  submitting,
+  onRespond,
+}: {
+  proposal: StudyMatchTutorProposal;
+  submitting: boolean;
+  onRespond: (proposal: StudyMatchTutorProposal, action: 'ACCEPT' | 'REJECT') => void;
+}) {
+  return (
+    <Card>
+      <Card.Header className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex flex-col gap-1">
+          <p className="text-xs font-semibold tracking-wide text-accent uppercase">
+            Tutoría de emergencia · {proposal.request.urgency}
+          </p>
+          <Card.Title>
+            {proposal.request.subject.code} · {proposal.request.subject.name}
+          </Card.Title>
+        </div>
+        <Chip size="sm" variant="soft" color="warning">
+          Requiere respuesta
+        </Chip>
+      </Card.Header>
+      <Card.Content className="flex flex-col gap-4">
+        <p className="text-sm text-muted">
+          Estudiante: <strong className="text-foreground">{proposal.studentAlias}</strong>
+        </p>
+        <p className="text-sm text-foreground">{proposal.request.topic}</p>
+        {proposal.request.description && (
+          <p className="text-sm text-muted">{proposal.request.description}</p>
+        )}
+        <dl className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+          <Meta label="Fecha">{formatLongDate(proposal.slot.startAt)}</Meta>
+          <Meta label="Horario">
+            {formatTimeRange(proposal.slot.startAt, proposal.slot.endAt)}
+          </Meta>
+          <Meta label="Modalidad">{MODALITY_LABEL[proposal.slot.modality]}</Meta>
+          <Meta label="Duración">{proposal.slot.durationMinutes} min</Meta>
+          <Meta label="Tarifa">
+            {proposal.estimatedPrice
+              ? `${formatCop(proposal.estimatedPrice.hourlyRate)}/hora`
+              : 'No disponible'}
+          </Meta>
+          <Meta label="Total estimado">
+            {proposal.estimatedPrice
+              ? formatCop(proposal.estimatedPrice.total)
+              : 'No disponible'}
+          </Meta>
+        </dl>
+        <p className="text-xs text-muted">
+          Responde antes de {dateTimeFormatter.format(new Date(proposal.expiresAt))}.
+        </p>
+        <div className="flex flex-col gap-3 sm:flex-row">
+          <Button
+            isDisabled={submitting}
+            onPress={() => onRespond(proposal, 'ACCEPT')}
+          >
+            Aceptar solicitud
+          </Button>
+          <Button
+            variant="tertiary"
+            isDisabled={submitting}
+            onPress={() => onRespond(proposal, 'REJECT')}
+          >
+            Rechazar y buscar otro tutor
+          </Button>
+        </div>
+      </Card.Content>
+    </Card>
+  );
+}
+
 /**
  * Pantalla inicial del tutor. Antes el rol TUTOR se quedaba sin destino tras
  * iniciar sesión: caía en un panel de "solo para estudiantes".
  *
- * Es de solo lectura. Aceptar, rechazar y completar reservas siguen estando en
- * la API y se expondrán en la pantalla del tutor que aún no existe.
+ * Además de sus reservas, muestra y permite responder las propuestas urgentes
+ * de StudyMatch que el tutor tiene pendientes.
  */
 export function TutorHome() {
   const { user } = useAuth();
   const [bookings, setBookings] = useState<Booking[]>([]);
+  const [proposals, setProposals] = useState<StudyMatchTutorProposal[]>([]);
   const [loading, setLoading] = useState(true);
+  const [responding, setResponding] = useState(false);
   const [error, setError] = useState<FriendlyError | null>(null);
 
   const load = useCallback(async () => {
@@ -64,8 +151,12 @@ export function TutorHome() {
     setError(null);
 
     try {
-      const result = await getTutorBookings();
+      const [result, pending] = await Promise.all([
+        getTutorBookings(),
+        getPendingStudyMatchProposals(),
+      ]);
       setBookings(result.items);
+      setProposals(pending.items);
     } catch (caught) {
       if (caught instanceof ApiError && caught.code === 'SESSION_EXPIRED') {
         return;
@@ -79,6 +170,42 @@ export function TutorHome() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  useEffect(() => {
+    const interval = window.setInterval(() => {
+      void getPendingStudyMatchProposals()
+        .then((result) => setProposals(result.items))
+        .catch((caught) => {
+          if (caught instanceof ApiError && caught.code === 'SESSION_EXPIRED') return;
+          setError(toFriendlyError(caught));
+        });
+    }, 5000);
+
+    return () => window.clearInterval(interval);
+  }, []);
+
+  async function handleProposalResponse(
+    proposal: StudyMatchTutorProposal,
+    action: 'ACCEPT' | 'REJECT',
+  ) {
+    setResponding(true);
+    setError(null);
+    try {
+      await respondToStudyMatchProposal(proposal.id, {
+        action,
+        ...(action === 'REJECT' ? { reason: 'No puedo atender esta solicitud.' } : {}),
+      });
+      setProposals((current) => current.filter((item) => item.id !== proposal.id));
+      if (action === 'ACCEPT') {
+        await load();
+      }
+    } catch (caught) {
+      if (caught instanceof ApiError && caught.code === 'SESSION_EXPIRED') return;
+      setError(toFriendlyError(caught));
+    } finally {
+      setResponding(false);
+    }
+  }
 
   const counts = useMemo(() => {
     const upcoming = bookings.filter(
@@ -117,6 +244,29 @@ export function TutorHome() {
       </section>
 
       {error && <LoadError error={error} onRetry={() => void load()} />}
+
+      {!loading && proposals.length > 0 && (
+        <section className="flex flex-col gap-4" aria-labelledby="emergency-proposals-title">
+          <div className="flex items-center gap-2">
+            <h2 id="emergency-proposals-title" className="text-lg font-bold text-foreground">
+              Solicitudes de emergencia
+            </h2>
+            <Chip size="sm" variant="soft" color="warning">
+              {proposals.length}
+            </Chip>
+          </div>
+          <div className="flex flex-col gap-4">
+            {proposals.map((proposal) => (
+              <EmergencyProposalCard
+                key={proposal.id}
+                proposal={proposal}
+                submitting={responding}
+                onRespond={(item, action) => void handleProposalResponse(item, action)}
+              />
+            ))}
+          </div>
+        </section>
+      )}
 
       {loading && (
         <div className="flex flex-col gap-4" aria-live="polite" aria-busy="true">

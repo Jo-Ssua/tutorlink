@@ -21,7 +21,7 @@ Proyecto académico de la asignatura Gerencia de Proyectos de TI (Universidad Ic
 | **Disponibilidad** | Consulta de franjas libres del tutor, siempre actualizadas (SCRUM-20) |
 | **Reservas** | Crear la reserva con materia, tema, modalidad, fecha y hora; aceptación del tutor; pago simulado; cancelación (SCRUM-21) |
 | Reseñas | Calificación de 1 a 5 y comentario después de una sesión completada (SCRUM-17) |
-| StudyMatch | Asignación automática de tutor para solicitudes urgentes |
+| **StudyMatch** | Asignación automática de tutor para solicitudes urgentes; el tutor recibe materia, tema, horario, modalidad y tarifa, y acepta o rechaza dentro del plazo (SCRUM-27) |
 | Administración | Aprobación de tutores, métricas y notificaciones |
 > Los pagos son **simulados**: no se procesan ni se solicitan datos bancarios reales.
 
@@ -50,6 +50,18 @@ Reglas clave de disponibilidad:
 - Solo se muestran franjas futuras y libres.
 - Cuando alguien reserva una franja, deja de estar disponible para los demás (la reserva es atómica en el backend; si dos personas compiten, solo una gana).
 - Si el tutor modifica su agenda, los cambios se reflejan para futuras reservas; la pantalla del estudiante se refresca sola cada 15 segundos.
+
+### Flujo de una solicitud urgente (StudyMatch)
+```text
+Estudiante: crea la solicitud con materia, tema, urgencia y ventana disponible
+StudyMatch: propone al tutor compatible y le notifica materia, tema, horario, modalidad y tarifa
+Tutor:      acepta dentro del plazo => reserva ACCEPTED, el estudiante confirma y paga (simulado)
+Tutor:      rechaza o no responde a tiempo => la solicitud avanza al siguiente tutor elegible
+```
+Reglas clave de solicitudes urgentes:
+- La notificación al tutor incluye la tarifa por hora y el total estimado de la sesión.
+- Cada propuesta tiene un vencimiento visible; al expirar, el sistema la cierra y busca otro candidato automáticamente.
+- Un rechazo libera la franja y continúa la asignación sin dejar la solicitud bloqueada.
 
 ## Arquitectura
 ```text

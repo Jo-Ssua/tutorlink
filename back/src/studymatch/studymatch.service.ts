@@ -264,12 +264,21 @@ export class StudyMatchService {
           },
         },
         slot: true,
+        tutor: {
+          select: {
+            tutorProfile: { select: { hourlyRate: true } },
+          },
+        },
       },
     });
 
     return {
       items: proposals.map((proposal) =>
-        this.mapProposalForTutor(proposal, proposal.request),
+        this.mapProposalForTutor(
+          proposal,
+          proposal.request,
+          proposal.tutor.tutorProfile?.hourlyRate ?? null,
+        ),
       ),
       total: proposals.length,
     };
@@ -380,7 +389,11 @@ export class StudyMatchService {
       const next = await this.assignNextCandidate(proposal.requestId);
 
       return {
-        proposal: this.mapProposalForTutor(updated, updated.request),
+        proposal: this.mapProposalForTutor(
+          updated,
+          updated.request,
+          proposal.tutor.tutorProfile?.hourlyRate ?? null,
+        ),
         next,
         message: 'Propuesta rechazada. StudyMatch continua con el siguiente tutor elegible.',
       };
@@ -1229,12 +1242,16 @@ export class StudyMatchService {
             userId: proposal.tutorId,
             type: 'STUDYMATCH_PROPOSAL',
             title: 'Solicitud urgente compatible',
-            message: `${request.subject.name}: ${request.topic} (${request.urgency}). Responde antes de ${formatDateTime(
-              expiresAt,
-            )}.`,
+            message: `${request.subject.name}: ${request.topic} · ${formatDateTime(
+              proposal.slot.startAt,
+            )} (${this.modalityLabel(proposal.slot.modality)}) · ${this.moneyLabel(
+              money(rate ?? 0),
+            )}/hora. Responde antes de ${formatDateTime(expiresAt)}.`,
             data: {
               proposalId: proposal.id,
               requestId: request.id,
+              subject: request.subject.name,
+              topic: request.topic,
               urgency: request.urgency,
               modality: proposal.slot.modality,
               startAt: proposal.slot.startAt.toISOString(),
@@ -1451,7 +1468,11 @@ export class StudyMatchService {
             : { id: request.studentId },
       proposals: proposals.map((proposal) =>
         view === 'tutor'
-          ? this.mapProposalForTutor(proposal, request)
+          ? this.mapProposalForTutor(
+              proposal,
+              request,
+              proposal.tutor.tutorProfile?.hourlyRate ?? null,
+            )
           : this.mapProposalForStudent(proposal),
       ),
       activeProposal:
@@ -1554,8 +1575,17 @@ export class StudyMatchService {
       subject: { id: string; name: string; code: string };
       professor: { id: string; fullName: string } | null;
     },
+    hourlyRate: Prisma.Decimal | number | null = null,
   ) {
     const durationMinutes = differenceInMinutes(proposal.slot.startAt, proposal.slot.endAt);
+    const estimatedPrice =
+      hourlyRate === null
+        ? null
+        : calculatePrice(
+            money(hourlyRate),
+            durationMinutes,
+            this.config.getOrThrow<number>('platformFeePercent'),
+          );
 
     return {
       id: proposal.id,
@@ -1585,6 +1615,7 @@ export class StudyMatchService {
         modality: proposal.slot.modality,
         durationMinutes,
       },
+      estimatedPrice,
     };
   }
 
@@ -1753,6 +1784,22 @@ export class StudyMatchService {
         },
       });
     }
+  }
+
+  private modalityLabel(modality: Modality): string {
+    return modality === Modality.VIRTUAL
+      ? 'Virtual'
+      : modality === Modality.IN_PERSON
+        ? 'Presencial'
+        : 'Virtual o presencial';
+  }
+
+  private moneyLabel(value: number): string {
+    return new Intl.NumberFormat('es-CO', {
+      style: 'currency',
+      currency: 'COP',
+      maximumFractionDigits: 0,
+    }).format(value);
   }
 
   private ttlMinutes(urgency: Urgency): number {
