@@ -12,7 +12,12 @@ import { StatTile } from '../components/StatTile';
 import { toFriendlyError, type FriendlyError } from '../errors';
 import type { Booking, BookingStatus } from '../types';
 import type { StudyMatchTutorProposal } from '../studymatch/types';
-import { formatLongDate, formatTimeRange, MODALITY_LABEL } from '../reservas/format';
+import {
+  formatCop,
+  formatLongDate,
+  formatTimeRange,
+  MODALITY_LABEL,
+} from '../reservas/format';
 
 const dateTimeFormatter = new Intl.DateTimeFormat('es-CO', {
   dateStyle: 'medium',
@@ -85,13 +90,23 @@ function EmergencyProposalCard({
         {proposal.request.description && (
           <p className="text-sm text-muted">{proposal.request.description}</p>
         )}
-        <dl className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+        <dl className="grid grid-cols-2 gap-4 sm:grid-cols-3">
           <Meta label="Fecha">{formatLongDate(proposal.slot.startAt)}</Meta>
           <Meta label="Horario">
             {formatTimeRange(proposal.slot.startAt, proposal.slot.endAt)}
           </Meta>
           <Meta label="Modalidad">{MODALITY_LABEL[proposal.slot.modality]}</Meta>
           <Meta label="Duración">{proposal.slot.durationMinutes} min</Meta>
+          <Meta label="Tarifa">
+            {proposal.estimatedPrice
+              ? `${formatCop(proposal.estimatedPrice.hourlyRate)}/hora`
+              : 'No disponible'}
+          </Meta>
+          <Meta label="Total estimado">
+            {proposal.estimatedPrice
+              ? formatCop(proposal.estimatedPrice.total)
+              : 'No disponible'}
+          </Meta>
         </dl>
         <p className="text-xs text-muted">
           Responde antes de {dateTimeFormatter.format(new Date(proposal.expiresAt))}.

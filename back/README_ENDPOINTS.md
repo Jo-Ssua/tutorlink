@@ -361,7 +361,7 @@ El pago es simulado; no se reciben datos bancarios. La comision se calcula en la
 | POST | `/studymatch/requests/:id/retry` | Autenticado | Reintentar busqueda | - |
 | POST | `/studymatch/requests/:id/advance` | Autenticado | Expirar propuesta y avanzar | - |
 | GET | `/studymatch/proposals/pending` | `TUTOR` | Propuestas pendientes | - |
-| POST | `/studymatch/proposals/:id/respond` | `TUTOR` | Aceptar o rechazar propuesta | `action`, `reason?` |
+| POST | `/studymatch/proposals/:id/respond` | `TUTOR` | Aceptar o rechazar propuesta dentro del plazo; al rechazar o expirar se avanza al siguiente tutor | `action`, `reason?` |
 | POST | `/studymatch/proposals/:id/confirm` | `STUDENT` | Confirmar propuesta y pagar | `accept`, `simulatePayment?`, `rejectionReason?` |
 
 Body de creacion:
@@ -388,6 +388,8 @@ Responder propuesta:
 }
 ```
 
+`GET /studymatch/proposals/pending` devuelve cada propuesta con `estimatedPrice` (`hourlyRate`, `total`, `platformFee`, etc.) para que el tutor conozca la tarifa antes de responder. La notificación `STUDYMATCH_PROPOSAL` incluye materia, tema, horario, modalidad, tarifa por hora, total estimado y fecha límite de respuesta en su mensaje y en `data`.
+
 Confirmar propuesta:
 
 ```json
@@ -405,7 +407,7 @@ POST /studymatch/proposals/:id/respond { action: ACCEPT } -> booking ACCEPTED
 POST /studymatch/proposals/:id/confirm { accept: true, simulatePayment: true } -> CONFIRMED
 ```
 
-Si el tutor rechaza o la propuesta expira, el sistema avanza automaticamente al siguiente candidato. Un cron cada 30 segundos expira propuestas vencidas.
+Si el tutor rechaza o la propuesta expira, el sistema avanza automaticamente al siguiente candidato. Un cron cada 30 segundos expira propuestas vencidas. Aceptar dentro del plazo crea la reserva en estado `ACCEPTED` y deja al estudiante confirmar condiciones y pago simulado.
 
 ---
 
