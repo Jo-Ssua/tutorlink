@@ -42,7 +42,10 @@ const NAV_BY_ROLE: Record<Role, NavItem[]> = {
     { to: '/app/oferta', label: 'Mi oferta', Icon: UserGearIcon },
     { to: '/app/historial', label: 'Historial', Icon: ClockCounterClockwiseIcon },
   ],
-  ADMIN: [{ to: '/app/admin', label: 'Administración', Icon: ChartBarIcon }],
+  ADMIN: [
+    { to: '/app/admin', label: 'Administración', Icon: ChartBarIcon },
+    { to: '/app/admin/postulaciones', label: 'Tutores', Icon: GraduationCapIcon },
+  ],
 };
 
 export function navItemsFor(role: Role | undefined): NavItem[] {

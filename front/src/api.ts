@@ -3,6 +3,7 @@ import type {
   AdminStats,
   ApiErrorBody,
   ApiSuccess,
+  ApproveTutorApplicationResult,
   BookingList,
   CreateReviewPayload,
   CreateReviewResult,
@@ -11,6 +12,7 @@ import type {
   Modality,
   Program,
   RegisterPayload,
+  RejectTutorApplicationResult,
   SessionUser,
   ApplyTutorPayload,
   OwnTutorApplication,
@@ -18,6 +20,7 @@ import type {
   TutorApplicationList,
   TutorOwnProfile,
   VerificationPending,
+  VerificationStatus,
   VerifyEmailResult,
 } from './types';
 import type { AvailabilitySlot } from './reservas/types';
@@ -372,6 +375,46 @@ export async function getAdminStats(): Promise<AdminStats> {
 
 export async function getPendingTutorApplications(): Promise<TutorApplicationList> {
   return request<TutorApplicationList>('/admin/tutor-applications?status=PENDING&limit=20');
+}
+
+/**
+ * Postulaciones para la pantalla de revisión: el estado y la búsqueda viajan al
+ * servidor, que ya filtra por nombre o correo y pagina.
+ */
+export async function getTutorApplications(params: {
+  status: VerificationStatus;
+  search?: string;
+  page?: number;
+  limit?: number;
+}): Promise<TutorApplicationList> {
+  const query = new URLSearchParams({
+    status: params.status,
+    page: String(params.page ?? 1),
+    limit: String(params.limit ?? 20),
+  });
+  if (params.search?.trim()) query.set('search', params.search.trim());
+
+  return request<TutorApplicationList>(`/admin/tutor-applications?${query.toString()}`);
+}
+
+export async function approveTutorApplication(
+  applicationId: string,
+): Promise<ApproveTutorApplicationResult> {
+  return request<ApproveTutorApplicationResult>(
+    `/admin/tutor-applications/${applicationId}/approve`,
+    { method: 'PATCH' },
+  );
+}
+
+/** El motivo es obligatorio: queda visible para el solicitante. */
+export async function rejectTutorApplication(
+  applicationId: string,
+  reason: string,
+): Promise<RejectTutorApplicationResult> {
+  return request<RejectTutorApplicationResult>(
+    `/admin/tutor-applications/${applicationId}/reject`,
+    { method: 'PATCH', body: JSON.stringify({ reason: reason.trim() }) },
+  );
 }
 
 export async function getNotifications(
