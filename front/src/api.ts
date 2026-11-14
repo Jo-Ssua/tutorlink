@@ -26,7 +26,7 @@ import type {
   VerificationStatus,
   VerifyEmailResult,
 } from './types';
-import type { AvailabilitySlot } from './reservas/types';
+import type { AvailabilitySlot, TutorProfile } from './reservas/types';
 import type { NotificationList } from './notifications/types';
 import type {
   StudyMatchActionResult,
@@ -369,6 +369,10 @@ export async function listCatalogSubjects(search: string): Promise<CatalogSubjec
   if (search.trim()) query.set('search', search.trim());
   const suffix = query.toString();
   return request<CatalogSubject[]>(`/catalog/subjects${suffix ? `?${suffix}` : ''}`);
+}
+
+export async function getPublicTutorProfile(tutorProfileId: string): Promise<TutorProfile> {
+  return request<TutorProfile>(`/tutors/${tutorProfileId}`);
 }
 
 export async function addTutorSubject(subjectId: string, evidenceUrl?: string): Promise<void> {
