@@ -18,6 +18,7 @@ import {
   createStudyMatchRequest,
   getMyStudyMatchRequests,
   getStudyMatchRequest,
+  listCatalogProfessors,
   listCatalogSubjects,
 } from '../api';
 import { FormError } from '../components/FormFeedback';
@@ -183,6 +184,8 @@ function ProposalDetails({
 
 export function StudyMatchScreen() {
   const [subjects, setSubjects] = useState<CatalogSubject[]>([]);
+  const [professors, setProfessors] = useState<Array<{ id: string; fullName: string }>>([]);
+  const [loadingProfessors, setLoadingProfessors] = useState(false);
   const [request, setRequest] = useState<StudyMatchRequest | null>(null);
   const [proposal, setProposal] = useState<StudyMatchProposal | null>(null);
   const [loading, setLoading] = useState(true);
@@ -191,6 +194,7 @@ export function StudyMatchScreen() {
   const [error, setError] = useState<FriendlyError | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [subjectId, setSubjectId] = useState('');
+  const [professorId, setProfessorId] = useState('');
   const [topic, setTopic] = useState('');
   const [description, setDescription] = useState('');
   const [urgency, setUrgency] = useState<StudyMatchUrgency>('HIGH');
@@ -235,6 +239,21 @@ export function StudyMatchScreen() {
   }, [load]);
 
   useEffect(() => {
+    setProfessorId('');
+    setProfessors([]);
+    if (!subjectId) return;
+
+    let active = true;
+    setLoadingProfessors(true);
+    listCatalogProfessors(subjectId)
+      .then((items) => { if (active) setProfessors(items); })
+      .catch((caught) => { if (active) setFormError(toFriendlyError(caught).message); })
+      .finally(() => { if (active) setLoadingProfessors(false); });
+
+    return () => { active = false; };
+  }, [subjectId]);
+
+  useEffect(() => {
     if (!request || ['CONFIRMED', 'CANCELLED', 'EXPIRED'].includes(request.status)) return;
     const interval = window.setInterval(() => {
       void loadActiveRequest(request.id).catch((caught) => setError(toFriendlyError(caught)));
@@ -251,18 +270,21 @@ export function StudyMatchScreen() {
   async function handleCreate(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setFormError(null);
-    if (!subjectId || topic.trim().length < 3) {
-      setFormError('Selecciona una materia y describe tu necesidad con al menos 3 caracteres.');
+    if (!subjectId || !professorId || topic.trim().length < 3) {
+      setFormError('Selecciona una materia, indica una preferencia de profesor y describe tu necesidad con al menos 3 caracteres.');
       return;
     }
-    if (new Date(availableFrom) >= new Date(availableTo)) {
-      setFormError('La hora inicial debe ser anterior a la hora final.');
+    const fromTime = Date.parse(availableFrom);
+    const toTime = Date.parse(availableTo);
+    if (!Number.isFinite(fromTime) || !Number.isFinite(toTime) || fromTime >= toTime) {
+      setFormError('Indica un horario válido: la hora inicial debe ser anterior a la final.');
       return;
     }
     setSubmitting(true);
     try {
       const result = await createStudyMatchRequest({
         subjectId,
+        ...(professorId && professorId !== 'ANY' ? { professorId } : {}),
         topic: topic.trim(),
         ...(description.trim() ? { description: description.trim() } : {}),
         urgency,
@@ -308,6 +330,7 @@ export function StudyMatchScreen() {
     setFormError(null);
     setError(null);
     setSubjectId('');
+    setProfessorId('');
     setTopic('');
     setDescription('');
     setAvailableFrom(initialDateTime(1));
@@ -351,6 +374,9 @@ export function StudyMatchScreen() {
               <p className="text-sm text-muted">
                 {request.subject.code} · {request.subject.name} · {request.topic}
               </p>
+              {request.professor && (
+                <p className="text-sm text-muted">Profesor indicado: {request.professor.fullName}</p>
+              )}
             </Card.Content>
           </Card>
 
@@ -429,6 +455,41 @@ export function StudyMatchScreen() {
                     ))}
                   </ListBox>
                 </Select.Popover>
+              </Select>
+
+              <Select
+                value={professorId}
+                onChange={(value) => setProfessorId(String(value ?? ''))}
+                isDisabled={!subjectId || loadingProfessors}
+              >
+                <Label>Profesor</Label>
+                <Select.Trigger>
+                  <Select.Value />
+                  <Select.Indicator />
+                </Select.Trigger>
+                <Select.Popover>
+                  <ListBox>
+                    <ListBox.Item id="ANY" textValue="Sin preferencia">
+                      Sin preferencia
+                      <ListBox.ItemIndicator />
+                    </ListBox.Item>
+                    {professors.map((professor) => (
+                      <ListBox.Item key={professor.id} id={professor.id} textValue={professor.fullName}>
+                        {professor.fullName}
+                        <ListBox.ItemIndicator />
+                      </ListBox.Item>
+                    ))}
+                  </ListBox>
+                </Select.Popover>
+                <Description>
+                  {loadingProfessors
+                    ? 'Buscando profesores que dictan esta materia…'
+                    : professors.length
+                      ? 'Elige un profesor o selecciona “Sin preferencia”.'
+                      : subjectId
+                        ? 'No hay profesores registrados para esta materia; indica “Sin preferencia” para continuar.'
+                        : 'Selecciona primero una materia del pensum oficial.'}
+                </Description>
               </Select>
 
               <TextField>
