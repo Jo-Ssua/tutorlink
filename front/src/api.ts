@@ -371,6 +371,13 @@ export async function listCatalogSubjects(search: string): Promise<CatalogSubjec
   return request<CatalogSubject[]>(`/catalog/subjects${suffix ? `?${suffix}` : ''}`);
 }
 
+export async function listCatalogProfessors(subjectId: string): Promise<Array<{ id: string; fullName: string }>> {
+  const query = new URLSearchParams({ subjectId });
+  return request<Array<{ id: string; fullName: string }>>(
+    `/catalog/professors?${query.toString()}`,
+  );
+}
+
 export async function getPublicTutorProfile(tutorProfileId: string): Promise<TutorProfile> {
   return request<TutorProfile>(`/tutors/${tutorProfileId}`);
 }
@@ -498,6 +505,7 @@ export async function markAllNotificationsRead(): Promise<void> {
 
 export async function createStudyMatchRequest(payload: {
   subjectId: string;
+  professorId?: string;
   topic: string;
   description?: string;
   urgency: StudyMatchUrgency;
