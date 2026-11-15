@@ -12,14 +12,17 @@ import {
 } from '@heroui/react';
 import { LightningIcon, StarIcon } from '@phosphor-icons/react';
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   ApiError,
   confirmStudyMatchProposal,
   createStudyMatchRequest,
+  getPublicTutorProfile,
   getMyStudyMatchRequests,
   getStudyMatchRequest,
   listCatalogSubjects,
 } from '../api';
+import type { TutorProfile } from '../reservas/types';
 import { FormError } from '../components/FormFeedback';
 import { LoadError } from '../components/LoadError';
 import { toFriendlyError, type FriendlyError } from '../errors';
@@ -29,6 +32,7 @@ import type {
   StudyMatchProposal,
   StudyMatchRequest,
   StudyMatchRequestStatus,
+  StudyMatchAlternative,
   StudyMatchUrgency,
 } from '../studymatch/types';
 
@@ -54,6 +58,30 @@ const STATUS_LABEL: Record<StudyMatchRequestStatus, string> = {
   CANCELLED: 'Solicitud cancelada',
   EXPIRED: 'Solicitud expirada',
 };
+
+function AlternativeCard({ alternative }: { alternative: StudyMatchAlternative }) {
+  return (
+    <li className="rounded-xl border border-border bg-surface p-4">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h3 className="font-semibold text-foreground">{alternative.tutorName}</h3>
+          <p className="text-sm text-muted">
+            {alternative.reviewCount > 0
+              ? `★ ${alternative.averageRating.toFixed(1)} · ${alternative.reviewCount} reseñas`
+              : 'Tutor verificado · sin reseñas aún'}
+          </p>
+        </div>
+        <p className="text-sm font-semibold text-accent">{formatCop(alternative.hourlyRate)}/hora</p>
+      </div>
+      <p className="mt-3 text-sm text-foreground">
+        {formatLongDate(alternative.startAt)} · {formatTimeRange(alternative.startAt, alternative.endAt)}
+      </p>
+      <p className="text-xs text-muted">
+        {MODALITIES.find((item) => item.value === alternative.modality)?.label ?? alternative.modality}
+      </p>
+    </li>
+  );
+}
 
 function toIso(localValue: string): string {
   return new Date(localValue).toISOString();
@@ -82,9 +110,21 @@ function ProposalDetails({
   onAccept: () => void;
   onReject: () => void;
 }) {
+  const [showProfile, setShowProfile] = useState(false);
+  const [tutorProfile, setTutorProfile] = useState<TutorProfile | null>(null);
+  const [profileError, setProfileError] = useState<string | null>(null);
   const price = proposal.estimatedPrice;
   const awaitingTutor = proposal.status === 'PENDING_TUTOR';
   const canConfirm = proposal.status === 'TUTOR_ACCEPTED';
+
+  useEffect(() => {
+    if (!showProfile || !proposal.tutor.profileId || tutorProfile) return;
+    let active = true;
+    getPublicTutorProfile(proposal.tutor.profileId)
+      .then((profile) => { if (active) setTutorProfile(profile); })
+      .catch(() => { if (active) setProfileError('No se pudo cargar el perfil público del tutor.'); });
+    return () => { active = false; };
+  }, [showProfile, proposal.tutor.profileId, tutorProfile]);
 
   return (
     <Card>
@@ -134,6 +174,10 @@ function ProposalDetails({
               {price ? `${formatCop(price.total)} total` : 'No disponible'}
             </dd>
           </div>
+          <div>
+            <dt className="text-xs font-semibold uppercase tracking-wide text-muted">Límite para responder</dt>
+            <dd className="mt-1 text-sm text-foreground">{new Date(proposal.expiresAt).toLocaleString('es-CO')}</dd>
+          </div>
           {price && (
             <div>
               <dt className="text-xs font-semibold uppercase tracking-wide text-muted">Desglose</dt>
@@ -143,6 +187,31 @@ function ProposalDetails({
             </div>
           )}
         </dl>
+
+        <div className="flex flex-col gap-3">
+          <Button variant="tertiary" isDisabled={!proposal.tutor.profileId} onPress={() => setShowProfile((open) => !open)}>
+            {showProfile ? 'Ocultar perfil' : 'Ver perfil del tutor'}
+          </Button>
+          {showProfile && (
+            <div className="rounded-xl border border-border bg-default p-4">
+              {!tutorProfile && !profileError && <p className="text-sm text-muted">Cargando perfil…</p>}
+              {profileError && <p className="text-sm text-danger">{profileError}</p>}
+              {tutorProfile && (
+                <div className="flex flex-col gap-3">
+                  <div>
+                    <h3 className="font-semibold text-foreground">{tutorProfile.fullName}</h3>
+                    <p className="text-sm text-muted">{tutorProfile.experienceYears} años de experiencia</p>
+                  </div>
+                  {tutorProfile.bio && <p className="text-sm text-muted">{tutorProfile.bio}</p>}
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-muted">Materias verificadas</p>
+                    <p className="mt-1 text-sm text-foreground">{tutorProfile.subjects.map((subject) => subject.name).join(' · ')}</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
 
         {canConfirm && (
           <div className="flex flex-col gap-3 rounded-xl border border-border bg-default p-4">
@@ -182,6 +251,7 @@ function ProposalDetails({
 }
 
 export function StudyMatchScreen() {
+  const navigate = useNavigate();
   const [subjects, setSubjects] = useState<CatalogSubject[]>([]);
   const [request, setRequest] = useState<StudyMatchRequest | null>(null);
   const [proposal, setProposal] = useState<StudyMatchProposal | null>(null);
@@ -235,7 +305,7 @@ export function StudyMatchScreen() {
   }, [load]);
 
   useEffect(() => {
-    if (!request || ['CONFIRMED', 'CANCELLED', 'EXPIRED'].includes(request.status)) return;
+    if (!request || ['CONFIRMED', 'CANCELLED', 'EXPIRED', 'NO_TUTORS'].includes(request.status)) return;
     const interval = window.setInterval(() => {
       void loadActiveRequest(request.id).catch((caught) => setError(toFriendlyError(caught)));
     }, 5000);
@@ -382,11 +452,19 @@ export function StudyMatchScreen() {
               <Card.Content className="py-10 text-center">
                 <h2 className="font-bold text-foreground">No encontramos tutores disponibles</h2>
                 <p className="mt-2 text-sm text-muted">
-                  Prueba otra materia, modalidad o ventana de horario.
+                  Estas alternativas pueden ayudarte a recibir tutoría antes. También puedes iniciar una búsqueda manual.
                 </p>
-                <Button className="mt-4" onPress={startNewRequest}>
-                  Crear otra solicitud
-                </Button>
+                {(request.alternatives ?? []).length > 0 && (
+                  <ul className="mt-5 grid gap-3 text-left">
+                    {(request.alternatives ?? []).map((alternative) => (
+                      <AlternativeCard key={`${alternative.tutorProfileId}-${alternative.startAt}`} alternative={alternative} />
+                    ))}
+                  </ul>
+                )}
+                <div className="mt-5 flex flex-col justify-center gap-3 sm:flex-row">
+                  <Button onPress={() => navigate('/app/reservar')}>Buscar tutor manualmente</Button>
+                  <Button variant="tertiary" onPress={startNewRequest}>Cambiar criterios</Button>
+                </div>
               </Card.Content>
             </Card>
           )}
