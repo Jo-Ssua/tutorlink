@@ -157,10 +157,10 @@ export default (): AppConfiguration => {
         10,
       ),
       weights: {
-        professorMatch: Number.parseFloat(process.env.STUDYMATCH_WEIGHT_PROFESSOR ?? '35'),
-        rating: Number.parseFloat(process.env.STUDYMATCH_WEIGHT_RATING ?? '30'),
-        availability: Number.parseFloat(process.env.STUDYMATCH_WEIGHT_AVAILABILITY ?? '25'),
-        workload: Number.parseFloat(process.env.STUDYMATCH_WEIGHT_WORKLOAD ?? '10'),
+        professorMatch: Number.parseFloat(process.env.STUDYMATCH_WEIGHT_PROFESSOR ?? '30'),
+        rating: Number.parseFloat(process.env.STUDYMATCH_WEIGHT_RATING ?? '20'),
+        availability: Number.parseFloat(process.env.STUDYMATCH_WEIGHT_AVAILABILITY ?? '45'),
+        workload: Number.parseFloat(process.env.STUDYMATCH_WEIGHT_WORKLOAD ?? '5'),
       },
     },
     // Nunca se expone el codigo de verificacion en produccion, aunque la variable lo pida.

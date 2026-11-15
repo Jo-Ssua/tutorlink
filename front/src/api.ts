@@ -26,7 +26,7 @@ import type {
   VerificationStatus,
   VerifyEmailResult,
 } from './types';
-import type { AvailabilitySlot } from './reservas/types';
+import type { AvailabilitySlot, TutorProfile } from './reservas/types';
 import type { NotificationList } from './notifications/types';
 import type {
   StudyMatchActionResult,
@@ -373,10 +373,13 @@ export async function listCatalogSubjects(search: string): Promise<CatalogSubjec
 
 export async function listCatalogProfessors(subjectId: string): Promise<Array<{ id: string; fullName: string }>> {
   const query = new URLSearchParams({ subjectId });
-  const professors = await request<Array<{ id: string; fullName: string }>>(
+  return request<Array<{ id: string; fullName: string }>>(
     `/catalog/professors?${query.toString()}`,
   );
-  return professors;
+}
+
+export async function getPublicTutorProfile(tutorProfileId: string): Promise<TutorProfile> {
+  return request<TutorProfile>(`/tutors/${tutorProfileId}`);
 }
 
 export async function addTutorSubject(subjectId: string, evidenceUrl?: string): Promise<void> {
