@@ -22,6 +22,8 @@ import type {
   OwnTutorApplicationSnapshot,
   TutorApplicationList,
   TutorOwnProfile,
+  EarningsGroupBy,
+  EarningsSummary,
   VerificationPending,
   VerificationStatus,
   VerifyEmailResult,
@@ -427,6 +429,19 @@ export async function deleteTutorAvailability(id: string): Promise<void> {
 
 export async function getTutorBookings(page = 1, limit = 20): Promise<BookingList> {
   return request<BookingList>(`/bookings/tutor?page=${page}&limit=${limit}`);
+}
+
+export async function getTutorEarnings(query: {
+  from?: string;
+  to?: string;
+  groupBy?: EarningsGroupBy;
+} = {}): Promise<EarningsSummary> {
+  const params = new URLSearchParams();
+  if (query.from) params.set('from', query.from);
+  if (query.to) params.set('to', query.to);
+  if (query.groupBy) params.set('groupBy', query.groupBy);
+  const suffix = params.toString();
+  return request<EarningsSummary>(`/tutor/earnings${suffix ? `?${suffix}` : ''}`);
 }
 
 export async function getAdminStats(): Promise<AdminStats> {

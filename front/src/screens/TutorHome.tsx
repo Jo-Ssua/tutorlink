@@ -34,6 +34,12 @@ const STATUS_LABEL: Record<BookingStatus, string> = {
   CANCELLED: 'Cancelada',
 };
 
+function earningLabel(booking: Booking) {
+  if (booking.status === 'COMPLETED') return copFormatter.format(booking.price.subtotal);
+  if (booking.status === 'CANCELLED' || booking.status === 'REJECTED') return 'No suma';
+  return 'Pendiente de completar';
+}
+
 const STATUS_COLOR: Record<BookingStatus, 'default' | 'warning' | 'success' | 'danger'> = {
   PENDING: 'warning',
   ACCEPTED: 'warning',
@@ -313,10 +319,8 @@ export function TutorHome() {
                       </time>
                     </Meta>
                     <Meta label="Estudiante">{booking.student?.alias ?? 'Anónimo'}</Meta>
-                    <Meta label="Tus ingresos">
-                      <span className="tabular-nums">
-                        {copFormatter.format(booking.price.subtotal - booking.price.platformFee)}
-                      </span>
+                    <Meta label="Ingreso simulado">
+                      <span className="tabular-nums">{earningLabel(booking)}</span>
                     </Meta>
                   </dl>
                 </Card.Content>
