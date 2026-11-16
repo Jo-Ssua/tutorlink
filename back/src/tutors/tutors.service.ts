@@ -887,6 +887,8 @@ export class TutorsService {
       simulated: true,
       disclaimer:
         'Los ingresos mostrados son simulados para el MVP y no representan transferencias bancarias reales.',
+      countingRule:
+        'Solo suman los pagos simulados aprobados de sesiones completadas. Una reserva cancelada, reembolsada o que no se completó no entra en el total.',
       currency: 'COP',
       period: { from, to, groupBy: query.groupBy },
       totals: {
@@ -913,6 +915,20 @@ export class TutorsService {
           tutorEarnings: money(payment.tutorEarnings),
           status: payment.status,
           simulated: payment.simulated,
+        }))
+        .sort((first, second) => second.sessionDate.getTime() - first.sessionDate.getTime()),
+      refunds: refundedPayments
+        .map((payment) => ({
+          paymentId: payment.id,
+          bookingId: payment.bookingId,
+          sessionDate: payment.booking.startAt,
+          refundedAt: payment.refundedAt,
+          subject: payment.booking.subject,
+          bookingStatus: payment.booking.status,
+          amount: money(payment.amount),
+          tutorEarnings: money(payment.tutorEarnings),
+          simulated: true,
+          countsAsIncome: false as const,
         }))
         .sort((first, second) => second.sessionDate.getTime() - first.sessionDate.getTime()),
     };

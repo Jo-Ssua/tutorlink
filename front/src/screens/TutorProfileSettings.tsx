@@ -44,6 +44,13 @@ const STATUS_LABEL: Record<VerificationStatus, string> = {
 
 const MODALITIES = Object.keys(MODALITY_LABEL) as Modality[];
 
+const SLOT_STATUS_LABEL: Record<AvailabilitySlot['status'], string> = {
+  AVAILABLE: 'Disponible',
+  HELD: 'En espera',
+  RESERVED: 'Reservada',
+  BLOCKED: 'Bloqueada',
+};
+
 const dateTimeFormatter = new Intl.DateTimeFormat('es-CO', {
   dateStyle: 'medium',
   timeStyle: 'short',
@@ -371,9 +378,13 @@ export function TutorProfileSettings() {
         </Card.Content>
       </Card>
 
-      <Card>
+      <Card id="disponibilidad">
         <Card.Header>
           <Card.Title>Disponibilidad</Card.Title>
+          <Card.Description>
+            Crea, edita o retira las franjas en las que puedes atender. Una franja con sesión
+            confirmada no se elimina: primero hay que gestionar esa reserva.
+          </Card.Description>
         </Card.Header>
         <Card.Content className="gap-5">
           <form className="flex flex-col gap-4" onSubmit={saveSlot}>
@@ -455,8 +466,13 @@ export function TutorProfileSettings() {
                     {dateTimeFormatter.format(new Date(slot.startAt))}
                   </strong>
                   <small className="text-muted">
-                    {MODALITY_LABEL[slot.modality]} · {slot.status}
+                    {MODALITY_LABEL[slot.modality]} · {SLOT_STATUS_LABEL[slot.status]}
                   </small>
+                  {slot.status === 'RESERVED' && (
+                    <small className="text-foreground">
+                      Tiene una sesión asociada. Gestiona la reserva antes de retirarla.
+                    </small>
+                  )}
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                   <Button
@@ -477,13 +493,18 @@ export function TutorProfileSettings() {
                     variant="tertiary"
                     isDisabled={locked}
                     onPress={() =>
-                      void run(
-                        () => deleteTutorAvailability(slot.id),
-                        'Horario retirado o bloqueado.',
-                      )
+                      void run(async () => {
+                        const result = await deleteTutorAvailability(slot.id);
+                        if (result.blocked) {
+                          throw new Error(
+                            result.message ??
+                              'Esta franja tiene una reserva. Gestiónala antes de retirarla.',
+                          );
+                        }
+                      }, 'Horario retirado.')
                     }
                   >
-                    Retirar
+                    Retirar horario
                   </Button>
                 </div>
               </li>
