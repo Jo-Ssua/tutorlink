@@ -97,6 +97,19 @@ describe('Agenda del tutor (SCRUM-20: cambios visibles para futuras reservas)', 
     ).rejects.toBeInstanceOf(ConflictException);
   });
 
+  it('impide eliminar una franja reservada y pide gestionar la reserva primero', async () => {
+    const { service, prisma } = build();
+    prisma.availabilitySlot.findUnique.mockResolvedValue({
+      id: UUID(8),
+      status: SlotStatus.RESERVED,
+      tutor: { userId: tutorUser.id },
+    });
+
+    await expect(service.deleteAvailability(tutorUser, UUID(8))).rejects.toMatchObject({
+      response: { code: 'SLOT_HAS_ACTIVE_BOOKING' },
+    });
+  });
+
   it('no permite modificar una franja con reservas asociadas (protege el historial)', async () => {
     const { service, prisma } = build();
     prisma.availabilitySlot.findUnique.mockResolvedValue({

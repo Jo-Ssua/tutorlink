@@ -421,8 +421,12 @@ export async function updateTutorAvailability(
   });
 }
 
-export async function deleteTutorAvailability(id: string): Promise<void> {
-  await request(`/tutor/availability/${id}`, { method: 'DELETE' });
+export async function deleteTutorAvailability(id: string): Promise<{
+  deleted: boolean;
+  blocked: boolean;
+  message?: string;
+}> {
+  return request(`/tutor/availability/${id}`, { method: 'DELETE' });
 }
 
 export async function getTutorBookings(page = 1, limit = 20): Promise<BookingList> {
