@@ -14,6 +14,7 @@ import { RegisterScreen } from './screens/RegisterScreen';
 import { StudentPayments } from './screens/StudentPayments';
 import { StudentBookings } from './screens/StudentBookings';
 import { TutorApplicationScreen } from './screens/TutorApplicationScreen';
+import { TutorEarningsScreen } from './screens/TutorEarningsScreen';
 import { TutorHistory } from './screens/TutorHistory';
 import { TutorHome } from './screens/TutorHome';
 import { TutorRequests } from './screens/TutorRequests';
@@ -51,6 +52,7 @@ export function AppRoutes() {
             <Route path="tutor" element={<TutorHome />} />
             <Route path="solicitudes" element={<TutorRequests />} />
             <Route path="oferta" element={<TutorProfileSettings />} />
+            <Route path="ingresos" element={<TutorEarningsScreen />} />
             <Route path="historial" element={<TutorHistory />} />
           </Route>
 
