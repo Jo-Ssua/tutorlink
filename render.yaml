@@ -1,0 +1,136 @@
+# Infraestructura de TutorLink en Render.
+#
+# Un solo archivo levanta todo: base de datos, API y frontend. Render exige
+# que el archivo se llame render.yaml y que viva en la raiz del repositorio.
+#
+# Como se aplica (no hace falta CLI):
+#   1. dashboard.render.com -> New -> Blueprint
+#   2. Conectar el repositorio y elegir la rama main
+#   3. Apply: Render crea los tres recursos y los conecta entre si
+#
+# Los secretos no viven aqui: `generateValue: true` hace que Render genere un
+# valor aleatorio de 256 bits la primera vez y lo guarde cifrado.
+#
+# Limites del plan gratuito y pasos de verificacion en docs/DESPLIEGUE.md.
+
+databases:
+  # Plan gratuito: 1 GB fijo, sin backups, y caduca 30 dias despues de crearse
+  # (con 14 dias de gracia para pasarla a un plan pago antes de que Render la
+  # borre). Para una entrega de curso alcanza; para algo permanente, no.
+  - name: tutorlink-db
+    plan: free
+    databaseName: tutorlink
+    user: tutorlink
+    postgresMajorVersion: '16'
+    region: oregon
+
+services:
+  # API NestJS. Usa el mismo Dockerfile de back/ que corre en local, asi que
+  # lo que funciona con `docker compose up` es lo que se despliega.
+  - type: web
+    name: tutorlink-api
+    runtime: docker
+    region: oregon
+    plan: free
+    branch: main
+    rootDir: back
+    dockerfilePath: ./Dockerfile
+    # El prefijo de la API entra en la ruta: API_PREFIX es api/v1.
+    healthCheckPath: /api/v1/health
+    envVars:
+      # Cadena de conexion interna de la base declarada arriba. Render la
+      # inyecta ya resuelta; no hay que copiar nada a mano.
+      - key: DATABASE_URL
+        fromDatabase:
+          name: tutorlink-db
+          property: connectionString
+
+      # Secretos generados por Render. JWT_ACCESS_SECRET y JWT_REFRESH_SECRET
+      # necesitan 32 caracteres o mas y tienen que ser distintos entre si o la
+      # API no arranca: generateValue entrega 256 bits en base64, de sobra.
+      - key: JWT_ACCESS_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: EMAIL_CODE_SECRET
+        generateValue: true
+      - key: ANONYMITY_SALT
+        generateValue: true
+
+      # Dominio del frontend. Sin CORS_ORIGINS correcto el navegador bloquea
+      # las llamadas. Si Render le asigna otro subdominio al frontend (pasa si
+      # el nombre ya esta tomado), hay que corregir estos dos valores.
+      - key: APP_URL
+        value: https://tutorlink-web.onrender.com
+      - key: CORS_ORIGINS
+        value: https://tutorlink-web.onrender.com
+
+      - key: NODE_ENV
+        value: production
+      - key: API_PREFIX
+        value: api/v1
+
+      # El entrypoint del contenedor aplica las migraciones al arrancar. El
+      # seed es idempotente (solo upsert), asi que puede quedar activo y deja
+      # los usuarios de prueba listos en cada despliegue.
+      - key: RUN_MIGRATIONS
+        value: 'true'
+      - key: SEED_ON_START
+        value: 'true'
+
+      # Los codigos de verificacion nunca se exponen por la API. Con
+      # MAIL_TRANSPORT=console quedan en los logs del servicio, que es donde
+      # se leen si se registra un usuario nuevo; los del seed ya vienen
+      # activos y no los necesitan.
+      - key: EXPOSE_DEV_CODES
+        value: 'false'
+      - key: MAIL_TRANSPORT
+        value: console
+      - key: MAIL_FROM
+        value: TutorLink <no-reply@tutorlink.local>
+
+      - key: INSTITUTIONAL_EMAIL_DOMAINS
+        value: universidad.edu.co,estudiantes.universidad.edu.co
+
+      - key: PLATFORM_FEE_PERCENT
+        value: '10'
+      - key: CANCELLATION_WINDOW_HOURS
+        value: '24'
+
+      - key: STUDYMATCH_TTL_CRITICAL_MINUTES
+        value: '5'
+      - key: STUDYMATCH_TTL_HIGH_MINUTES
+        value: '10'
+      - key: STUDYMATCH_TTL_MEDIUM_MINUTES
+        value: '20'
+      - key: STUDYMATCH_TTL_LOW_MINUTES
+        value: '30'
+      - key: STUDYMATCH_STUDENT_CONFIRM_MINUTES
+        value: '10'
+
+  # Frontend: Vite compila a estaticos, asi que no necesita servidor ni plan.
+  # Los sitios estaticos de Render no se duermen (eso solo le pasa a la API).
+  - type: web
+    name: tutorlink-web
+    runtime: static
+    branch: main
+    rootDir: front
+    buildCommand: npm ci && npm run build
+    staticPublishPath: ./dist
+    envVars:
+      # Vite incrusta las VITE_* en el bundle al compilar: cambiar este valor
+      # obliga a volver a desplegar el frontend, no basta con reiniciarlo.
+      - key: VITE_API_URL
+        value: https://tutorlink-api.onrender.com/api/v1
+      - key: VITE_INSTITUTIONAL_DOMAINS
+        value: universidad.edu.co,estudiantes.universidad.edu.co
+    # React Router usa rutas del navegador: cualquier URL que no sea un
+    # archivo tiene que servir index.html o se ve un 404 al recargar.
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    headers:
+      - path: /assets/*
+        name: Cache-Control
+        value: public, max-age=31536000, immutable
