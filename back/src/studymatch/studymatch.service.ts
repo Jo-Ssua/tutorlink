@@ -264,6 +264,7 @@ export class StudyMatchService {
           },
         },
         slot: true,
+        tutor: { select: { tutorProfile: { select: { hourlyRate: true } } } },
       },
     });
 
@@ -365,7 +366,11 @@ export class StudyMatchService {
         await this.releaseSlotAfterProposal(tx, proposal.slotId);
         return tx.studyMatchProposal.findUniqueOrThrow({
           where: { id: proposal.id },
-          include: { request: { include: { subject: true, professor: true } }, slot: true },
+          include: {
+            request: { include: { subject: true, professor: true } },
+            slot: true,
+            tutor: { select: { tutorProfile: { select: { hourlyRate: true } } } },
+          },
         });
       });
 
@@ -1229,7 +1234,10 @@ export class StudyMatchService {
             userId: proposal.tutorId,
             type: 'STUDYMATCH_PROPOSAL',
             title: 'Solicitud urgente compatible',
-            message: `${request.subject.name}: ${request.topic} (${request.urgency}). Responde antes de ${formatDateTime(
+            // El aviso lleva la tarifa: el tutor no deberia abrir la pantalla para saber cuanto paga la sesion.
+            message: `${request.subject.name}: ${request.topic} (${request.urgency}). ${formatDateTime(
+              proposal.slot.startAt,
+            )}${rate === null ? '' : `, tarifa ${rate} COP/hora`}. Responde antes de ${formatDateTime(
               expiresAt,
             )}.`,
             data: {
@@ -1541,6 +1549,7 @@ export class StudyMatchService {
       respondedAt: Date | null;
       createdAt: Date;
       slot: { id: string; startAt: Date; endAt: Date; modality: Modality };
+      tutor: { tutorProfile: { hourlyRate: Prisma.Decimal } | null };
     },
     request: {
       id: string;
@@ -1556,6 +1565,15 @@ export class StudyMatchService {
     },
   ) {
     const durationMinutes = differenceInMinutes(proposal.slot.startAt, proposal.slot.endAt);
+    // El tutor decide con la tarifa a la vista, no solo con materia y horario (HU12).
+    const hourlyRate = proposal.tutor.tutorProfile?.hourlyRate;
+    const estimatedPrice = hourlyRate
+      ? calculatePrice(
+          money(hourlyRate),
+          durationMinutes,
+          this.config.getOrThrow<number>('platformFeePercent'),
+        )
+      : null;
 
     return {
       id: proposal.id,
@@ -1567,6 +1585,7 @@ export class StudyMatchService {
       respondedAt: proposal.respondedAt,
       createdAt: proposal.createdAt,
       studentAlias: this.alias(request.studentId),
+      estimatedPrice,
       request: {
         id: request.id,
         subject: request.subject,
