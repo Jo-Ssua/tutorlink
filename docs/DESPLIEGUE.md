@@ -30,11 +30,11 @@ cubriendo el caso. Para una demo en vivo basta abrir la app un minuto antes.
 [`render.yaml`](../render.yaml) en la raíz del repositorio declara los tres recursos y los conecta
 entre sí. Render lo llama *Blueprint*; no hace falta CLI.
 
-| Recurso | Nombre | Tipo |
-| --- | --- | --- |
-| Base de datos | `tutorlink-db` | PostgreSQL 16, plan gratuito |
-| API | `tutorlink-api` | Web service con el Dockerfile de `back/` |
-| Frontend | `tutorlink-web` | Sitio estático con el build de `front/` |
+| Recurso | Nombre | Tipo | URL desplegada |
+| --- | --- | --- | --- |
+| Base de datos | `tutorlink-db` | PostgreSQL 16, plan gratuito | interna |
+| API | `tutorlink-api` | Web service con el Dockerfile de `back/` | https://tutorlink-api-3lj1.onrender.com |
+| Frontend | `tutorlink-web` | Sitio estático con el build de `front/` | https://tutorlink-web.onrender.com |
 
 ### Pasos
 
@@ -50,9 +50,12 @@ idempotente — solo hace `upsert` — así que puede quedar activo en cada desp
 
 ### Revisar los dominios después del primer Apply
 
-El `render.yaml` da por hecho que Render asigna `https://tutorlink-api.onrender.com` y
-`https://tutorlink-web.onrender.com`. Si alguno de esos subdominios ya está tomado, Render le añade
-un sufijo y hay que corregir tres variables:
+Los subdominios de `onrender.com` son **únicos a nivel global**, no por cuenta. En el primer Apply
+`tutorlink-api` ya estaba tomado por otra cuenta y Render renombró el servicio a
+`tutorlink-api-3lj1`; `tutorlink-web` sí quedó con su nombre. Los valores del `render.yaml` ya
+reflejan eso, pero si los servicios se recrean el sufijo puede cambiar.
+
+Después de un Apply conviene comparar las URL reales del dashboard con estas tres variables:
 
 | Servicio | Variable | Valor correcto |
 | --- | --- | --- |
@@ -61,7 +64,8 @@ un sufijo y hay que corregir tres variables:
 | `tutorlink-web` | `VITE_API_URL` | URL real de la API, con `/api/v1` al final |
 
 `VITE_API_URL` se incrusta al compilar, así que cambiarla exige **redesplegar** el frontend, no solo
-reiniciarlo.
+reiniciarlo. Y hay que corregirla **en el `render.yaml`**, no solo en el dashboard: con `autoSync`
+activo, el siguiente push a `main` vuelve a aplicar el archivo y pisa el valor puesto a mano.
 
 ### Límites del plan gratuito
 
@@ -78,12 +82,17 @@ reiniciarlo.
 ### Verificar
 
 ```bash
-curl https://tutorlink-api.onrender.com/api/v1/health
+curl https://tutorlink-api-3lj1.onrender.com/api/v1/health
 ```
 
 ```bash
-API_URL=https://tutorlink-api.onrender.com/api/v1 node back/scripts/smoke-test.mjs
+API_URL=https://tutorlink-api-3lj1.onrender.com/api/v1 node back/scripts/smoke-test.mjs
 ```
+
+El smoke test salta el paso de verificación por correo: necesita `EXPOSE_DEV_CODES=true`, que en
+producción está apagado a propósito. Lo demás sí se prueba de punta a punta, y **escribe en la base**
+(una cuenta `smoke.*@universidad.edu.co`, reservas y una cancelación por corrida). El seed solo hace
+`upsert`, así que redesplegar no borra esos datos.
 
 Después, entrar al frontend e iniciar sesión con un usuario del seed
 (`estudiante@universidad.edu.co`, contraseña `TutorLink123*`; el resto está en el README).
@@ -236,8 +245,10 @@ computador del visitante.
   `SMTP_USER`, `SMTP_PASS`. Los usuarios del seed ya están activos y no necesitan verificación.
 - **Swagger queda público** en `https://<dominio>/docs`. Es intencional en este MVP, pero conviene
   saberlo antes de compartir la URL.
-- **`plan: free` de la base en `render.yaml` está sin confirmar** contra la tabla de planes de la
-  referencia oficial de Render. Si el Apply lo rechaza, es la única línea que hay que cambiar: al
-  borrarla Render usa su plan por defecto, que es pago.
-- **La base gratuita de Render se conecta por red interna.** Si la API no logra alcanzarla, usar la
-  *External Database URL* del dashboard como `DATABASE_URL`.
+- **Los subdominios de `onrender.com` son globales.** Un nombre tomado por otra cuenta obliga a
+  Render a renombrar el servicio con un sufijo, y eso rompe el frontend en silencio: compila contra
+  una URL que no es la tuya y las llamadas se van a un 404 ajeno. Siempre comparar las URL del
+  dashboard con lo que dice el `render.yaml`.
+- **La base gratuita se conecta por red interna** y funciona así desde un servicio gratuito. Si
+  alguna vez la API no lograra alcanzarla, usar la *External Database URL* del dashboard como
+  `DATABASE_URL`.

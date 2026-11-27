@@ -83,8 +83,10 @@ tutorlink/
 - Git
 
 ## Cómo ejecutar el proyecto
-> Para publicarlo (todo en Render con un solo [`render.yaml`](render.yaml), o frontend en Vercel y
-> backend en Railway), ver [`docs/DESPLIEGUE.md`](docs/DESPLIEGUE.md).
+> Desplegado en Render: **https://tutorlink-web.onrender.com** (API en
+> https://tutorlink-api-3lj1.onrender.com/api/v1). El primer acceso puede tardar cerca de un minuto:
+> los servicios gratuitos se duermen a los 15 minutos sin tráfico.
+> Para volver a publicarlo, ver [`docs/DESPLIEGUE.md`](docs/DESPLIEGUE.md).
 ### 1. Backend
 Opción A, todo en Docker (base de datos + API, con migraciones y datos de prueba automáticos):
 ```bash
