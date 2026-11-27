@@ -58,8 +58,7 @@ services:
         generateValue: true
 
       # Dominio del frontend. Sin CORS_ORIGINS correcto el navegador bloquea
-      # las llamadas. Si Render le asigna otro subdominio al frontend (pasa si
-      # el nombre ya esta tomado), hay que corregir estos dos valores.
+      # las llamadas. Estos dos valores son los que Render asigno de verdad.
       - key: APP_URL
         value: https://tutorlink-web.onrender.com
       - key: CORS_ORIGINS
@@ -120,8 +119,14 @@ services:
     envVars:
       # Vite incrusta las VITE_* en el bundle al compilar: cambiar este valor
       # obliga a volver a desplegar el frontend, no basta con reiniciarlo.
+      #
+      # El sufijo -3lj1 no es un adorno: los subdominios de onrender.com son
+      # unicos a nivel global y `tutorlink-api` ya estaba tomado por otra
+      # cuenta, asi que Render renombro el servicio al crearlo. Este valor es
+      # el dominio real. Si el servicio se recrea con otro nombre, hay que
+      # cambiarlo aqui y volver a desplegar el frontend.
       - key: VITE_API_URL
-        value: https://tutorlink-api.onrender.com/api/v1
+        value: https://tutorlink-api-3lj1.onrender.com/api/v1
       - key: VITE_INSTITUTIONAL_DOMAINS
         value: universidad.edu.co,estudiantes.universidad.edu.co
     # React Router usa rutas del navegador: cualquier URL que no sea un
