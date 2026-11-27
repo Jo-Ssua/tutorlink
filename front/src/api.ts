@@ -4,6 +4,7 @@ import type {
   ApiErrorBody,
   ApiSuccess,
   ApproveTutorApplicationResult,
+  Booking,
   BookingList,
   BookingStatus,
   CreateReviewPayload,
@@ -21,11 +22,13 @@ import type {
   OwnTutorApplicationSnapshot,
   TutorApplicationList,
   TutorOwnProfile,
+  EarningsGroupBy,
+  EarningsSummary,
   VerificationPending,
   VerificationStatus,
   VerifyEmailResult,
 } from './types';
-import type { AvailabilitySlot } from './reservas/types';
+import type { AvailabilitySlot, TutorProfile } from './reservas/types';
 import type { NotificationList } from './notifications/types';
 import type {
   StudyMatchActionResult,
@@ -302,6 +305,24 @@ export async function getMyBookings(
 }
 
 /**
+ * Cancela una reserva del estudiante.
+ *
+ * La API valida la politica de cancelacion: si faltan menos horas de las
+ * permitidas responde `CANCELLATION_WINDOW_CLOSED` y la reserva no cambia.
+ */
+export async function cancelBooking(
+  bookingId: string,
+  reason?: string,
+): Promise<{ booking: Booking; message: string }> {
+  const trimmed = reason?.trim();
+
+  return request<{ booking: Booking; message: string }>(`/bookings/${bookingId}/cancel`, {
+    method: 'POST',
+    body: JSON.stringify(trimmed ? { reason: trimmed } : {}),
+  });
+}
+
+/**
  * Pago simulado de una reserva ya aceptada por el tutor.
  *
  * `simulatePayment: true` es la única confirmación que pide la API: no hay
@@ -352,6 +373,17 @@ export async function listCatalogSubjects(search: string): Promise<CatalogSubjec
   return request<CatalogSubject[]>(`/catalog/subjects${suffix ? `?${suffix}` : ''}`);
 }
 
+export async function listCatalogProfessors(subjectId: string): Promise<Array<{ id: string; fullName: string }>> {
+  const query = new URLSearchParams({ subjectId });
+  return request<Array<{ id: string; fullName: string }>>(
+    `/catalog/professors?${query.toString()}`,
+  );
+}
+
+export async function getPublicTutorProfile(tutorProfileId: string): Promise<TutorProfile> {
+  return request<TutorProfile>(`/tutors/${tutorProfileId}`);
+}
+
 export async function addTutorSubject(subjectId: string, evidenceUrl?: string): Promise<void> {
   await request('/tutor/subjects', {
     method: 'POST',
@@ -391,12 +423,29 @@ export async function updateTutorAvailability(
   });
 }
 
-export async function deleteTutorAvailability(id: string): Promise<void> {
-  await request(`/tutor/availability/${id}`, { method: 'DELETE' });
+export async function deleteTutorAvailability(id: string): Promise<{
+  deleted: boolean;
+  blocked: boolean;
+  message?: string;
+}> {
+  return request(`/tutor/availability/${id}`, { method: 'DELETE' });
 }
 
 export async function getTutorBookings(page = 1, limit = 20): Promise<BookingList> {
   return request<BookingList>(`/bookings/tutor?page=${page}&limit=${limit}`);
+}
+
+export async function getTutorEarnings(query: {
+  from?: string;
+  to?: string;
+  groupBy?: EarningsGroupBy;
+} = {}): Promise<EarningsSummary> {
+  const params = new URLSearchParams();
+  if (query.from) params.set('from', query.from);
+  if (query.to) params.set('to', query.to);
+  if (query.groupBy) params.set('groupBy', query.groupBy);
+  const suffix = params.toString();
+  return request<EarningsSummary>(`/tutor/earnings${suffix ? `?${suffix}` : ''}`);
 }
 
 export async function getAdminStats(): Promise<AdminStats> {
@@ -475,6 +524,7 @@ export async function markAllNotificationsRead(): Promise<void> {
 
 export async function createStudyMatchRequest(payload: {
   subjectId: string;
+  professorId?: string;
   topic: string;
   description?: string;
   urgency: StudyMatchUrgency;

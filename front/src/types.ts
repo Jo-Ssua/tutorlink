@@ -101,6 +101,60 @@ export interface SimulatedPaymentResult {
   disclaimer: string;
 }
 
+export type EarningsGroupBy = 'DAY' | 'WEEK' | 'MONTH';
+
+/** Resumen de ingresos simulados del tutor (SCRUM-33). */
+export interface EarningsSummary {
+  simulated: true;
+  disclaimer: string;
+  countingRule: string;
+  currency: string;
+  period: { from: string; to: string; groupBy: EarningsGroupBy };
+  totals: {
+    gross: number;
+    platformFees: number;
+    netEarnings: number;
+    sessions: number;
+    refundedTotal: number;
+    refundedSessions: number;
+  };
+  periods: Array<{
+    periodStart: string;
+    gross: number;
+    platformFees: number;
+    netEarnings: number;
+    sessions: number;
+  }>;
+  sessions: Array<{
+    paymentId: string;
+    reference: string;
+    bookingId: string;
+    sessionDate: string;
+    paidAt: string | null;
+    subject: { id: string; code: string; name: string };
+    studentAlias: string;
+    durationMinutes: number;
+    subtotal: number;
+    platformFee: number;
+    total: number;
+    tutorEarnings: number;
+    status: string;
+    simulated: boolean;
+  }>;
+  refunds: Array<{
+    paymentId: string;
+    bookingId: string;
+    sessionDate: string;
+    refundedAt: string | null;
+    subject: { id: string; code: string; name: string };
+    bookingStatus: string;
+    amount: number;
+    tutorEarnings: number;
+    simulated: boolean;
+    countsAsIncome: false;
+  }>;
+}
+
 export interface BookingReview {
   rating: number;
   comment: string | null;
@@ -137,6 +191,13 @@ export interface Booking {
   cancelledAt: string | null;
   completedAt: string | null;
   createdAt: string;
+  /** Regla de cancelacion calculada por la API para la reserva. */
+  cancellationPolicy?: {
+    windowHours: number;
+    canCancel: boolean;
+    deadline: string;
+    message: string;
+  };
 }
 
 export interface BookingList {

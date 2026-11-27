@@ -1,5 +1,6 @@
 import { Button, Card, Chip } from '@heroui/react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import {
   ApiError,
   getPendingStudyMatchProposals,
@@ -38,6 +39,12 @@ const STATUS_LABEL: Record<BookingStatus, string> = {
   REJECTED: 'Rechazada',
   CANCELLED: 'Cancelada',
 };
+
+function earningLabel(booking: Booking) {
+  if (booking.status === 'COMPLETED') return copFormatter.format(booking.price.subtotal);
+  if (booking.status === 'CANCELLED' || booking.status === 'REJECTED') return 'No suma';
+  return 'Pendiente de completar';
+}
 
 const STATUS_COLOR: Record<BookingStatus, 'default' | 'warning' | 'success' | 'danger'> = {
   PENDING: 'warning',
@@ -281,9 +288,12 @@ export function TutorHome() {
           <Card.Content className="flex flex-col items-center gap-2 py-10 text-center">
             <h2 className="text-lg font-bold text-foreground">Todavía no tienes reservas</h2>
             <p className="max-w-md text-sm text-muted">
-              Cuando alguien reserve uno de tus horarios aparecerá aquí. Publica tu disponibilidad
-              desde <code>POST /tutor/availability</code> mientras la pantalla de agenda esté en
-              construcción.
+              Cuando alguien reserve uno de tus horarios aparecerá aquí. Crea, edita o retira franjas
+              desde{' '}
+              <Link to="/app/oferta#disponibilidad" className="font-semibold text-accent underline">
+                Mi oferta
+              </Link>
+              .
             </p>
           </Card.Content>
         </Card>
@@ -328,10 +338,8 @@ export function TutorHome() {
                       </time>
                     </Meta>
                     <Meta label="Estudiante">{booking.student?.alias ?? 'Anónimo'}</Meta>
-                    <Meta label="Tus ingresos">
-                      <span className="tabular-nums">
-                        {copFormatter.format(booking.price.subtotal - booking.price.platformFee)}
-                      </span>
+                    <Meta label="Ingreso simulado">
+                      <span className="tabular-nums">{earningLabel(booking)}</span>
                     </Meta>
                   </dl>
                 </Card.Content>

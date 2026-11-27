@@ -119,7 +119,18 @@ export interface StudyMatchRequest {
       paidAt: string | null;
     } | null;
   } | null;
-  alternatives: unknown[] | null;
+  alternatives: StudyMatchAlternative[] | null;
+}
+
+export interface StudyMatchAlternative {
+  tutorProfileId: string;
+  tutorName: string;
+  averageRating: number;
+  reviewCount: number;
+  hourlyRate: number;
+  startAt: string;
+  endAt: string;
+  modality: Modality;
 }
 
 export interface StudyMatchRequestPage {
