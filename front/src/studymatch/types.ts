@@ -87,6 +87,7 @@ export interface StudyMatchTutorProposal {
     modality: Modality;
     durationMinutes: number;
   };
+  estimatedPrice: StudyMatchPrice | null;
 }
 
 export interface StudyMatchRequest {

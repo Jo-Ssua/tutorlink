@@ -1,21 +1,31 @@
 import { BellIcon, CheckIcon, CheckCircleIcon } from '@phosphor-icons/react';
 import { Button, Card, Chip } from '@heroui/react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import {
   ApiError,
   getNotifications,
   markAllNotificationsRead,
   markNotificationRead,
 } from '../api';
+import { useAuth } from '../auth/AuthContext';
 import { LoadError } from '../components/LoadError';
 import { NOTIFICATIONS_UPDATED_EVENT } from '../components/NotificationBell';
 import { toFriendlyError, type FriendlyError } from '../errors';
+import { formatCop } from '../reservas/format';
 import type { Notification, NotificationType } from '../notifications/types';
+import type { Modality } from '../types';
 
 const dateTimeFormatter = new Intl.DateTimeFormat('es-CO', {
   dateStyle: 'medium',
   timeStyle: 'short',
 });
+
+const MODALITY_LABEL: Record<Modality, string> = {
+  VIRTUAL: 'Virtual',
+  IN_PERSON: 'Presencial',
+  HYBRID: 'Virtual o presencial',
+};
 
 const TYPE_LABEL: Record<NotificationType, string> = {
   TUTOR_APPLICATION_SUBMITTED: 'Postulación',
@@ -37,12 +47,66 @@ const TYPE_LABEL: Record<NotificationType, string> = {
   SYSTEM: 'Sistema',
 };
 
+function StudyMatchDetails({ data }: { data: Record<string, unknown> }) {
+  const text = (key: string) =>
+    typeof data[key] === 'string' ? (data[key] as string) : null;
+  const startAt = text('startAt');
+  const modality = text('modality') as Modality | null;
+  const rate = typeof data.hourlyRate === 'number' ? data.hourlyRate : null;
+  const expiresAt = text('expiresAt');
+
+  return (
+    <dl className="mt-3 grid grid-cols-2 gap-3 rounded-lg border border-border bg-surface p-3 text-sm sm:grid-cols-3">
+      {text('subject') && (
+        <div>
+          <dt className="text-xs font-semibold uppercase tracking-wide text-muted">Materia</dt>
+          <dd className="text-foreground">{text('subject')}</dd>
+        </div>
+      )}
+      {text('topic') && (
+        <div>
+          <dt className="text-xs font-semibold uppercase tracking-wide text-muted">Tema</dt>
+          <dd className="text-foreground">{text('topic')}</dd>
+        </div>
+      )}
+      {startAt && (
+        <div>
+          <dt className="text-xs font-semibold uppercase tracking-wide text-muted">Horario</dt>
+          <dd className="text-foreground">
+            {dateTimeFormatter.format(new Date(startAt))}
+          </dd>
+        </div>
+      )}
+      {modality && (
+        <div>
+          <dt className="text-xs font-semibold uppercase tracking-wide text-muted">Modalidad</dt>
+          <dd className="text-foreground">{MODALITY_LABEL[modality]}</dd>
+        </div>
+      )}
+      {rate !== null && (
+        <div>
+          <dt className="text-xs font-semibold uppercase tracking-wide text-muted">Tarifa</dt>
+          <dd className="tabular-nums text-foreground">{formatCop(rate)}/hora</dd>
+        </div>
+      )}
+      {expiresAt && (
+        <div>
+          <dt className="text-xs font-semibold uppercase tracking-wide text-muted">Responde antes de</dt>
+          <dd className="text-foreground">{dateTimeFormatter.format(new Date(expiresAt))}</dd>
+        </div>
+      )}
+    </dl>
+  );
+}
+
 function NotificationItem({
   notification,
   onRead,
+  canRespond,
 }: {
   notification: Notification;
   onRead: (notification: Notification) => void;
+  canRespond: boolean;
 }) {
   const isUnread = notification.readAt === null;
 
@@ -65,6 +129,17 @@ function NotificationItem({
             </Chip>
           </div>
           <p className="mt-1 text-sm text-muted">{notification.message}</p>
+          {notification.type === 'STUDYMATCH_PROPOSAL' && notification.data && (
+            <StudyMatchDetails data={notification.data} />
+          )}
+          {notification.type === 'STUDYMATCH_PROPOSAL' && canRespond && (
+            <Link
+              to="/app/tutor"
+              className="mt-3 inline-flex text-sm font-semibold text-accent hover:underline"
+            >
+              Responder solicitud urgente
+            </Link>
+          )}
           <time className="mt-2 block text-xs text-muted" dateTime={notification.createdAt}>
             {dateTimeFormatter.format(new Date(notification.createdAt))}
           </time>
@@ -85,6 +160,7 @@ function NotificationItem({
 }
 
 export function NotificationsScreen() {
+  const { user } = useAuth();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [markingAll, setMarkingAll] = useState(false);
@@ -196,6 +272,7 @@ export function NotificationsScreen() {
               key={notification.id}
               notification={notification}
               onRead={(item) => void handleRead(item)}
+              canRespond={user?.role === 'TUTOR'}
             />
           ))}
         </section>
