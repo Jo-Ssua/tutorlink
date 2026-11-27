@@ -83,6 +83,8 @@ tutorlink/
 - Git
 
 ## Cómo ejecutar el proyecto
+> Para publicarlo (frontend en Vercel, backend y PostgreSQL en Railway), ver
+> [`docs/DESPLIEGUE.md`](docs/DESPLIEGUE.md).
 ### 1. Backend
 Opción A, todo en Docker (base de datos + API, con migraciones y datos de prueba automáticos):
 ```bash
