@@ -26,6 +26,10 @@ COPY --from=build /app/dist ./dist
 COPY --from=build /app/dist-seed ./dist-seed
 COPY --from=build /app/prisma ./prisma
 COPY package.json ./
+# Prisma 7 lee la URL de la base desde prisma.config.ts, no del schema.
+# Sin este archivo, `prisma migrate deploy` falla al arrancar el contenedor:
+# "The datasource.url property is required in your Prisma config file".
+COPY --from=build /app/prisma.config.ts ./
 COPY docker-entrypoint.sh ./
 
 RUN sed -i 's/\r$//' docker-entrypoint.sh && chmod +x docker-entrypoint.sh

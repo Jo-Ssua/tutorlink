@@ -83,8 +83,8 @@ tutorlink/
 - Git
 
 ## Cómo ejecutar el proyecto
-> Para publicarlo (frontend en Vercel, backend y PostgreSQL en Railway), ver
-> [`docs/DESPLIEGUE.md`](docs/DESPLIEGUE.md).
+> Para publicarlo (todo en Render con un solo [`render.yaml`](render.yaml), o frontend en Vercel y
+> backend en Railway), ver [`docs/DESPLIEGUE.md`](docs/DESPLIEGUE.md).
 ### 1. Backend
 Opción A, todo en Docker (base de datos + API, con migraciones y datos de prueba automáticos):
 ```bash
@@ -92,6 +92,10 @@ cd back
 cp .env.example .env
 docker compose up -d --build
 ```
+Con esta opción la API queda en el **3001**, no en el 3000, porque el 3000 suele estar ocupado por
+el front u otro servidor. Si el 3001 o el 5432 también están tomados, Docker falla con
+`ports are not available`; en ese caso muévelos: `API_PORT=3005 POSTGRES_PORT=5433 docker compose up
+-d --build`.
 Opción B, API local en modo desarrollo (solo la base de datos en Docker):
 ```bash
 cd back
@@ -103,12 +107,12 @@ npm run prisma:seed
 npm run start:dev
 ```
 En Windows PowerShell usa `copy .env.example .env` en lugar de `cp`.
-Con el backend arriba:
+Con el backend arriba (`PUERTO` es 3001 con la opción A y 3000 con la opción B):
 | Recurso | URL |
 | --- | --- |
-| API | http://localhost:3000/api/v1 |
-| Swagger | http://localhost:3000/docs |
-| Health | http://localhost:3000/api/v1/health |
+| API | `http://localhost:PUERTO/api/v1` |
+| Swagger | `http://localhost:PUERTO/docs` |
+| Health | `http://localhost:PUERTO/api/v1/health` |
 
 ### 2. Frontend
 ```bash
@@ -166,6 +170,7 @@ Para recorrer las 12 historias de usuario a mano, paso a paso y con los datos de
 | --- | --- | --- |
 | `DATABASE_URL` | `back/.env` | Conexión a PostgreSQL |
 | `POSTGRES_PORT` | `back/.env` | Puerto del host para PostgreSQL en Docker (por defecto `5432`) |
+| `API_PORT` | `back/.env` | Puerto del host para la API en Docker (por defecto `3001`) |
 | `CORS_ORIGINS` | `back/.env` | Orígenes permitidos del frontend |
 | `PLATFORM_FEE_PERCENT` | `back/.env` | Comisión de la plataforma (por defecto 10 %) |
 | `CANCELLATION_WINDOW_HOURS` | `back/.env` | Anticipación mínima para cancelar (por defecto 24 h) |
