@@ -3,6 +3,11 @@ import assert from 'node:assert/strict';
 const baseUrl = process.env.API_URL ?? 'http://localhost:3000/api/v1';
 const password = process.env.DEMO_PASSWORD ?? 'TutorLink123*';
 
+// Swagger queda fuera del prefijo de la API, asi que su URL se arma desde el
+// origen de API_URL. Fijarla a localhost:3000 hacia que el smoke test probara
+// otro servidor cuando la API no estaba en ese puerto, o en otra maquina.
+const docsJsonUrl = new URL('/docs-json', baseUrl).toString();
+
 async function api(path, options = {}) {
   const response = await fetch(`${baseUrl}${path}`, {
     ...options,
@@ -306,9 +311,9 @@ async function main() {
 
   await authFlow();
 
-  const openapi = await fetch('http://localhost:3000/docs-json').then((response) =>
-    response.json(),
-  );
+  const docsResponse = await fetch(docsJsonUrl, { signal: AbortSignal.timeout(20_000) });
+  assert.equal(docsResponse.status, 200, `GET ${docsJsonUrl} -> ${docsResponse.status}`);
+  const openapi = await docsResponse.json();
   assert.ok(Object.keys(openapi.paths).length > 0);
   console.log(`OK OpenAPI (${Object.keys(openapi.paths).length} rutas)`);
 
