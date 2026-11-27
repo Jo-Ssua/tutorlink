@@ -59,14 +59,6 @@ export interface StudyMatchProposal {
   awaitingStudent: boolean;
 }
 
-/**
- * Lo que cuesta la sesión vista desde el tutor. Agrega al desglose del estudiante
- * lo que le queda a él: el subtotal, ya descontada la comisión simulada.
- */
-export interface StudyMatchTutorPrice extends StudyMatchPrice {
-  tutorEarnings: number;
-}
-
 export interface StudyMatchTutorProposal {
   id: string;
   requestId: string;
@@ -77,7 +69,6 @@ export interface StudyMatchTutorProposal {
   respondedAt: string | null;
   createdAt: string;
   studentAlias: string;
-  estimatedPrice: StudyMatchTutorPrice | null;
   request: {
     id: string;
     subject: { id: string; code: string; name: string };

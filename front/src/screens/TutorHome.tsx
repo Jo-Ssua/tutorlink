@@ -69,8 +69,6 @@ function EmergencyProposalCard({
   submitting: boolean;
   onRespond: (proposal: StudyMatchTutorProposal, action: 'ACCEPT' | 'REJECT') => void;
 }) {
-  const price = proposal.estimatedPrice;
-
   return (
     <Card>
       <Card.Header className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
@@ -101,19 +99,6 @@ function EmergencyProposalCard({
           </Meta>
           <Meta label="Modalidad">{MODALITY_LABEL[proposal.slot.modality]}</Meta>
           <Meta label="Duración">{proposal.slot.durationMinutes} min</Meta>
-          {/* La tarifa va en la ficha: aceptar sin saber cuánto paga la sesión no es una decisión. */}
-          <Meta label="Tarifa">
-            {price ? `${copFormatter.format(price.hourlyRate)}/hora` : 'Sin tarifa registrada'}
-          </Meta>
-          {price && (
-            <Meta label="Recibes">
-              {copFormatter.format(price.tutorEarnings)}
-              <span className="block text-xs text-muted">
-                Total al estudiante {copFormatter.format(price.total)} · comisión simulada{' '}
-                {copFormatter.format(price.platformFee)} ({price.platformFeePercent}%)
-              </span>
-            </Meta>
-          )}
         </dl>
         <p className="text-xs text-muted">
           Responde antes de {dateTimeFormatter.format(new Date(proposal.expiresAt))}.
